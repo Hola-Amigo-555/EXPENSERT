@@ -1,26 +1,470 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>financemapper-tool</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
-
-    <meta property="og:title" content="Lovable Generated Project" />
-    <meta property="og:description" content="Lovable Generated Project" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   </head>
-
   <body>
-    <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-    <script type="module" src="/src/main.tsx"></script>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h2 class="app-title">ExpenseTracker</h2>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#dashboard" class="nav-item active" data-page="dashboard">
+            <i class="fas fa-th-large"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#transactions" class="nav-item" data-page="transactions">
+            <i class="fas fa-list"></i>
+            <span>Transactions</span>
+          </a>
+          <a href="#categories" class="nav-item" data-page="categories">
+            <i class="fas fa-folder"></i>
+            <span>Categories</span>
+          </a>
+          <a href="#budgets" class="nav-item" data-page="budgets">
+            <i class="fas fa-credit-card"></i>
+            <span>Budgets</span>
+          </a>
+          <a href="#reports" class="nav-item" data-page="reports">
+            <i class="fas fa-chart-line"></i>
+            <span>Reports</span>
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <a href="#settings" class="footer-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+          <a href="#logout" class="footer-item">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Sign Out</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Pages Container -->
+        <div class="page-container">
+          <!-- Dashboard Page -->
+          <div class="page active" id="dashboard-page">
+            <div class="page-header">
+              <h1>Dashboard</h1>
+              <p class="subtitle">Overview of your financial situation</p>
+            </div>
+            
+            <div class="dashboard-summary">
+              <div class="summary-card">
+                <div class="card-icon income-icon">
+                  <i class="fas fa-arrow-up"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Total Income</h3>
+                  <p class="amount" id="total-income">$0.00</p>
+                  <p class="period">This month</p>
+                </div>
+              </div>
+              
+              <div class="summary-card">
+                <div class="card-icon expense-icon">
+                  <i class="fas fa-arrow-down"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Total Expenses</h3>
+                  <p class="amount" id="total-expenses">$0.00</p>
+                  <p class="period">This month</p>
+                </div>
+              </div>
+              
+              <div class="summary-card">
+                <div class="card-icon balance-icon">
+                  <i class="fas fa-wallet"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Balance</h3>
+                  <p class="amount" id="balance">$0.00</p>
+                  <p class="period">Current</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="dashboard-charts">
+              <div class="chart-container">
+                <h3>Expense Breakdown</h3>
+                <canvas id="expense-chart"></canvas>
+              </div>
+              <div class="chart-container">
+                <h3>Income vs Expenses</h3>
+                <canvas id="income-expense-chart"></canvas>
+              </div>
+            </div>
+            
+            <div class="recent-transactions">
+              <div class="section-header">
+                <h3>Recent Transactions</h3>
+                <a href="#transactions" class="view-all">View All</a>
+              </div>
+              <div class="transactions-list" id="recent-transactions-list">
+                <!-- Transactions will be inserted here by JavaScript -->
+                <div class="empty-state">
+                  <i class="fas fa-receipt"></i>
+                  <p>No transactions yet</p>
+                  <button class="btn btn-primary" id="add-transaction-btn">Add Transaction</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transactions Page -->
+          <div class="page" id="transactions-page">
+            <div class="page-header">
+              <h1>Transactions</h1>
+              <button class="btn btn-primary" id="add-transaction-modal-btn">
+                <i class="fas fa-plus"></i> Add Transaction
+              </button>
+            </div>
+            
+            <div class="filters">
+              <div class="filter-group">
+                <label for="transaction-type-filter">Type</label>
+                <select id="transaction-type-filter">
+                  <option value="all">All</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="category-filter">Category</label>
+                <select id="category-filter">
+                  <option value="all">All Categories</option>
+                  <!-- Categories will be added by JavaScript -->
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="date-range">Date Range</label>
+                <input type="date" id="date-from">
+                <span>to</span>
+                <input type="date" id="date-to">
+              </div>
+              <button class="btn btn-secondary" id="apply-filters">Apply Filters</button>
+            </div>
+            
+            <div class="transactions-container">
+              <table class="transactions-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="transactions-table-body">
+                  <!-- Transactions will be added by JavaScript -->
+                </tbody>
+              </table>
+              <div class="empty-state" id="transactions-empty-state">
+                <i class="fas fa-receipt"></i>
+                <p>No transactions found</p>
+                <button class="btn btn-primary" id="add-transaction-empty-btn">Add Transaction</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Categories Page -->
+          <div class="page" id="categories-page">
+            <div class="page-header">
+              <h1>Categories</h1>
+              <button class="btn btn-primary" id="add-category-btn">
+                <i class="fas fa-plus"></i> Add Category
+              </button>
+            </div>
+            
+            <div class="categories-container">
+              <div class="category-type">
+                <h2>Income Categories</h2>
+                <div class="categories-grid" id="income-categories">
+                  <!-- Income categories will be added by JavaScript -->
+                </div>
+                <div class="empty-state" id="income-categories-empty">
+                  <i class="fas fa-folder-open"></i>
+                  <p>No income categories yet</p>
+                </div>
+              </div>
+              
+              <div class="category-type">
+                <h2>Expense Categories</h2>
+                <div class="categories-grid" id="expense-categories">
+                  <!-- Expense categories will be added by JavaScript -->
+                </div>
+                <div class="empty-state" id="expense-categories-empty">
+                  <i class="fas fa-folder-open"></i>
+                  <p>No expense categories yet</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Budgets Page -->
+          <div class="page" id="budgets-page">
+            <div class="page-header">
+              <h1>Budgets</h1>
+              <button class="btn btn-primary" id="add-budget-btn">
+                <i class="fas fa-plus"></i> Add Budget
+              </button>
+            </div>
+            
+            <div class="budgets-container" id="budgets-container">
+              <!-- Budgets will be added by JavaScript -->
+            </div>
+            <div class="empty-state" id="budgets-empty-state">
+              <i class="fas fa-money-bill-wave"></i>
+              <p>No budgets found</p>
+              <p class="empty-description">Create your first budget to track spending limits</p>
+              <button class="btn btn-primary" id="add-budget-empty-btn">Add Budget</button>
+            </div>
+          </div>
+
+          <!-- Reports Page -->
+          <div class="page" id="reports-page">
+            <div class="page-header">
+              <h1>Reports</h1>
+              <div class="report-actions">
+                <div class="date-picker">
+                  <button class="btn btn-outline" id="prev-month">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <span id="current-month">June 2023</span>
+                  <button class="btn btn-outline" id="next-month">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+                <button class="btn btn-secondary" id="export-report">
+                  <i class="fas fa-file-export"></i> Export
+                </button>
+              </div>
+            </div>
+            
+            <div class="reports-container">
+              <div class="report-section">
+                <h2>Monthly Overview</h2>
+                <div class="chart-container">
+                  <canvas id="monthly-overview-chart"></canvas>
+                </div>
+              </div>
+              
+              <div class="report-section">
+                <h2>Expense Categories</h2>
+                <div class="chart-container">
+                  <canvas id="expense-categories-chart"></canvas>
+                </div>
+              </div>
+              
+              <div class="report-section">
+                <h2>Income Sources</h2>
+                <div class="chart-container">
+                  <canvas id="income-sources-chart"></canvas>
+                </div>
+              </div>
+              
+              <div class="report-section">
+                <h2>Monthly Trend</h2>
+                <div class="chart-container">
+                  <canvas id="monthly-trend-chart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Transaction Modal -->
+    <div class="modal" id="add-transaction-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add Transaction</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="add-transaction-form">
+            <div class="form-group">
+              <label for="transaction-type">Type</label>
+              <div class="tab-selector">
+                <button type="button" class="tab active" data-value="income">Income</button>
+                <button type="button" class="tab" data-value="expense">Expense</button>
+              </div>
+              <input type="hidden" id="transaction-type" value="income">
+            </div>
+            
+            <div class="form-group">
+              <label for="transaction-amount">Amount</label>
+              <input type="number" id="transaction-amount" placeholder="0.00" step="0.01" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="transaction-date">Date</label>
+              <input type="date" id="transaction-date" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="transaction-category">Category</label>
+              <select id="transaction-category" required>
+                <!-- Categories will be added by JavaScript -->
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="transaction-description">Description</label>
+              <input type="text" id="transaction-description" placeholder="Enter description">
+            </div>
+            
+            <div class="form-group">
+              <label for="transaction-notes">Notes (Optional)</label>
+              <textarea id="transaction-notes" placeholder="Add any additional details"></textarea>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary cancel-modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Transaction</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add Category Modal -->
+    <div class="modal" id="add-category-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add Category</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="add-category-form">
+            <div class="form-group">
+              <label for="category-type">Type</label>
+              <div class="tab-selector">
+                <button type="button" class="tab active" data-value="income">Income</button>
+                <button type="button" class="tab" data-value="expense">Expense</button>
+              </div>
+              <input type="hidden" id="category-type" value="income">
+            </div>
+            
+            <div class="form-group">
+              <label for="category-name">Name</label>
+              <input type="text" id="category-name" placeholder="Enter category name" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="category-color">Color</label>
+              <input type="color" id="category-color" value="#0EA5E9">
+            </div>
+            
+            <div class="form-group">
+              <label for="category-icon">Icon</label>
+              <div class="icon-selector" id="icon-selector">
+                <div class="icon-option selected" data-icon="money-bill">
+                  <i class="fas fa-money-bill"></i>
+                </div>
+                <div class="icon-option" data-icon="shopping-cart">
+                  <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="icon-option" data-icon="utensils">
+                  <i class="fas fa-utensils"></i>
+                </div>
+                <div class="icon-option" data-icon="house">
+                  <i class="fas fa-house"></i>
+                </div>
+                <div class="icon-option" data-icon="car">
+                  <i class="fas fa-car"></i>
+                </div>
+                <div class="icon-option" data-icon="plane">
+                  <i class="fas fa-plane"></i>
+                </div>
+                <div class="icon-option" data-icon="medkit">
+                  <i class="fas fa-medkit"></i>
+                </div>
+                <div class="icon-option" data-icon="graduation-cap">
+                  <i class="fas fa-graduation-cap"></i>
+                </div>
+              </div>
+              <input type="hidden" id="category-icon" value="money-bill">
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary cancel-modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Category</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add Budget Modal -->
+    <div class="modal" id="add-budget-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add Budget</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="add-budget-form">
+            <div class="form-group">
+              <label for="budget-category">Category</label>
+              <select id="budget-category" required>
+                <!-- Expense categories will be added by JavaScript -->
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="budget-amount">Budget Amount</label>
+              <input type="number" id="budget-amount" placeholder="0.00" step="0.01" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="budget-period">Period</label>
+              <select id="budget-period" required>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary cancel-modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Budget</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Include Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- JavaScript files -->
+    <script src="js/data.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
   </body>
 </html>
