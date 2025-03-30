@@ -1,5 +1,7 @@
 
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { ExpenseProvider } from "./contexts/ExpenseContext";
+import { Toaster } from "@/components/ui/toaster";
 import MainLayout from './components/layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -13,20 +15,23 @@ import './App.css';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Index />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="transactions" element={<Transactions />} />
-          <Route path="budgets" element={<Budgets />} />
-          <Route path="categories" element={<Categories />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="test" element={<TestPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </Router>
+    <ExpenseProvider>
+      <Toaster />
+      <Router>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Index />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="transactions" element={<Transactions />} />
+            <Route path="budgets" element={<Budgets />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="test" element={<TestPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Router>
+    </ExpenseProvider>
   );
 }
 
