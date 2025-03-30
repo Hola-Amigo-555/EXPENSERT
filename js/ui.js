@@ -56,7 +56,11 @@ const UI = {
     addBudgetForm: document.getElementById('add-budget-form'),
     
     // Toast
-    toastContainer: document.getElementById('toast-container')
+    toastContainer: document.getElementById('toast-container'),
+    
+    // User
+    signOutBtn: document.getElementById('sign-out-btn'),
+    headerAvatarImg: document.getElementById('header-avatar-img')
   },
   
   // Initialize UI
@@ -69,6 +73,7 @@ const UI = {
     this.renderCategories();
     this.renderBudgets();
     this.initReports();
+    this.updateUserInfo();
   },
   
   // Setup event listeners
@@ -189,6 +194,21 @@ const UI = {
       });
     }
     
+    // Sign Out button
+    if (this.elements.signOutBtn) {
+      this.elements.signOutBtn.addEventListener('click', () => {
+        Auth.logout();
+        window.location.href = 'login.html';
+      });
+    }
+    
+    // User avatar click for settings page
+    if (this.elements.headerAvatarImg) {
+      this.elements.headerAvatarImg.parentElement.addEventListener('click', () => {
+        window.location.href = 'settings.html';
+      });
+    }
+    
     // Close modals
     document.querySelectorAll('.close-modal, .cancel-modal').forEach(btn => {
       btn.addEventListener('click', () => this.closeAllModals());
@@ -202,6 +222,17 @@ const UI = {
         }
       });
     });
+  },
+  
+  // Update user information in the UI
+  updateUserInfo() {
+    const currentUser = Auth.getCurrentUser();
+    if (!currentUser) return;
+    
+    // Update profile avatar
+    if (currentUser.avatar && this.elements.headerAvatarImg) {
+      this.elements.headerAvatarImg.src = currentUser.avatar;
+    }
   },
   
   // Setup navigation
@@ -365,21 +396,24 @@ const UI = {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
+    // Get currency symbol
+    const currency = localStorage.getItem('currency') || '₹';
+    
     // Update summary cards
     const totalIncome = ExpenseTracker.getTotalIncomeByMonth(currentMonth, currentYear);
     const totalExpenses = ExpenseTracker.getTotalExpensesByMonth(currentMonth, currentYear);
     const balance = totalIncome - totalExpenses;
     
     if (this.elements.totalIncome) {
-      this.elements.totalIncome.textContent = `$${totalIncome.toFixed(2)}`;
+      this.elements.totalIncome.textContent = `${currency}${totalIncome.toFixed(2)}`;
     }
     
     if (this.elements.totalExpenses) {
-      this.elements.totalExpenses.textContent = `$${totalExpenses.toFixed(2)}`;
+      this.elements.totalExpenses.textContent = `${currency}${totalExpenses.toFixed(2)}`;
     }
     
     if (this.elements.balance) {
-      this.elements.balance.textContent = `$${balance.toFixed(2)}`;
+      this.elements.balance.textContent = `${currency}${balance.toFixed(2)}`;
     }
     
     // Render recent transactions
@@ -392,6 +426,9 @@ const UI = {
   // Render recent transactions
   renderRecentTransactions() {
     if (!this.elements.recentTransactionsList) return;
+    
+    // Get currency symbol
+    const currency = localStorage.getItem('currency') || '₹';
     
     const transactions = ExpenseTracker.getTransactions();
     const recentTransactions = [...transactions]
@@ -434,7 +471,7 @@ const UI = {
             <div class="transaction-date">${formattedDate}</div>
           </div>
           <div class="transaction-amount ${transaction.type === 'income' ? 'income-amount' : 'expense-amount'}">
-            ${transaction.type === 'income' ? '+' : '-'}$${Number(transaction.amount).toFixed(2)}
+            ${transaction.type === 'income' ? '+' : '-'}${currency}${Number(transaction.amount).toFixed(2)}
           </div>
         </div>
       `;
@@ -451,6 +488,9 @@ const UI = {
   
   // Render all transactions
   renderTransactions(filteredTransactions = null) {
+    // Get currency symbol
+    const currency = localStorage.getItem('currency') || '₹';
+    
     const transactions = filteredTransactions || ExpenseTracker.getTransactions();
     const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
     
@@ -476,7 +516,7 @@ const UI = {
           <td>${formattedDate}</td>
           <td>${transaction.description || '-'}</td>
           <td>${transaction.category}</td>
-          <td class="${typeClass}">${amountPrefix}$${Number(transaction.amount).toFixed(2)}</td>
+          <td class="${typeClass}">${amountPrefix}${currency}${Number(transaction.amount).toFixed(2)}</td>
           <td>
             <span class="badge ${transaction.type === 'income' ? 'income' : 'expense'}">
               ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
@@ -652,6 +692,9 @@ const UI = {
   renderBudgets() {
     if (!this.elements.budgetsContainer || !this.elements.budgetsEmptyState) return;
     
+    // Get currency symbol
+    const currency = localStorage.getItem('currency') || '₹';
+    
     const budgets = ExpenseTracker.getBudgets();
     
     if (budgets.length === 0) {
@@ -689,7 +732,7 @@ const UI = {
           <div class="budget-content">
             <div class="budget-progress ${status}">
               <div class="progress-info">
-                <span>$${spent.toFixed(2)} of $${budget.amount.toFixed(2)}</span>
+                <span>${currency}${spent.toFixed(2)} of ${currency}${budget.amount.toFixed(2)}</span>
                 <span>${percentage.toFixed(0)}%</span>
               </div>
               <div class="progress-bar">
@@ -700,7 +743,7 @@ const UI = {
           <div class="budget-footer">
             <span class="remaining-label">Remaining</span>
             <span class="remaining-value ${status === 'danger' ? 'danger' : ''}">
-              $${remaining.toFixed(2)}
+              ${currency}${remaining.toFixed(2)}
             </span>
           </div>
           ${status === 'danger' ? `
@@ -815,6 +858,9 @@ const UI = {
   handleAddTransaction(e) {
     e.preventDefault();
     
+    // Get currency symbol
+    const currency = localStorage.getItem('currency') || '₹';
+    
     const type = document.getElementById('transaction-type').value;
     const amount = parseFloat(document.getElementById('transaction-amount').value);
     const date = document.getElementById('transaction-date').value;
@@ -890,6 +936,9 @@ const UI = {
   // Handle add budget
   handleAddBudget(e) {
     e.preventDefault();
+    
+    // Get currency symbol
+    const currency = localStorage.getItem('currency') || '₹';
     
     const category = document.getElementById('budget-category').value;
     const amount = parseFloat(document.getElementById('budget-amount').value);
@@ -1010,7 +1059,8 @@ const UI = {
       <button class="toast-close">&times;</button>
     `;
     
-    this.elements.toastContainer.appendChild(toast);
+    const toastContainer = document.getElementById('toast-container');
+    toastContainer.appendChild(toast);
     
     // Add event listener for close button
     toast.querySelector('.toast-close').addEventListener('click', () => {

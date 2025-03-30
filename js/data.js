@@ -1,349 +1,525 @@
 
-// Data management with localStorage
-const ExpenseTracker = {
-  // Data structure
-  data: {
-    transactions: [],
-    categories: [],
-    budgets: []
-  },
+// Authentication System
+const Auth = (function() {
+  // Private variables
+  const userStorageKey = 'expenseTrackerUser';
+  const usersStorageKey = 'expenseTrackerUsers';
   
-  // Initialize data from localStorage
-  init() {
-    // Load data from localStorage or set default values
-    this.data.transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-    this.data.categories = JSON.parse(localStorage.getItem('categories')) || this._getDefaultCategories();
-    this.data.budgets = JSON.parse(localStorage.getItem('budgets')) || [];
-    
-    // Generate IDs for old data if needed
-    this._ensureIds();
-  },
+  // Private methods
+  const getUsers = function() {
+    const usersJSON = localStorage.getItem(usersStorageKey);
+    return usersJSON ? JSON.parse(usersJSON) : [];
+  };
   
-  // Default categories
-  _getDefaultCategories() {
-    return [
-      { id: this._generateId(), name: 'Salary', type: 'income', color: '#10b981', icon: 'money-bill' },
-      { id: this._generateId(), name: 'Freelance', type: 'income', color: '#3b82f6', icon: 'laptop' },
-      { id: this._generateId(), name: 'Investment', type: 'income', color: '#6366f1', icon: 'chart-line' },
-      { id: this._generateId(), name: 'Groceries', type: 'expense', color: '#ef4444', icon: 'shopping-cart' },
-      { id: this._generateId(), name: 'Dining', type: 'expense', color: '#f59e0b', icon: 'utensils' },
-      { id: this._generateId(), name: 'Transport', type: 'expense', color: '#8b5cf6', icon: 'car' },
-      { id: this._generateId(), name: 'Housing', type: 'expense', color: '#10b981', icon: 'house' },
-      { id: this._generateId(), name: 'Utilities', type: 'expense', color: '#3b82f6', icon: 'bolt' },
-      { id: this._generateId(), name: 'Healthcare', type: 'expense', color: '#ec4899', icon: 'medkit' }
-    ];
-  },
+  const saveUsers = function(users) {
+    localStorage.setItem(usersStorageKey, JSON.stringify(users));
+  };
   
-  // Ensure all records have IDs
-  _ensureIds() {
-    this.data.transactions.forEach(item => {
-      if (!item.id) item.id = this._generateId();
-    });
-    
-    this.data.categories.forEach(item => {
-      if (!item.id) item.id = this._generateId();
-    });
-    
-    this.data.budgets.forEach(item => {
-      if (!item.id) item.id = this._generateId();
-    });
-  },
+  const findUserByEmail = function(email) {
+    const users = getUsers();
+    return users.find(user => user.email.toLowerCase() === email.toLowerCase());
+  };
   
-  // Save data to localStorage
-  _saveData() {
-    localStorage.setItem('transactions', JSON.stringify(this.data.transactions));
-    localStorage.setItem('categories', JSON.stringify(this.data.categories));
-    localStorage.setItem('budgets', JSON.stringify(this.data.budgets));
-  },
-  
-  // Helper to generate unique IDs
-  _generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-  },
-  
-  // Get all transactions
-  getTransactions() {
-    return this.data.transactions;
-  },
-  
-  // Add a new transaction
-  addTransaction(transaction) {
-    const newTransaction = {
-      id: this._generateId(),
-      ...transaction,
-      date: transaction.date || new Date().toISOString().split('T')[0]
-    };
-    
-    this.data.transactions.push(newTransaction);
-    this._saveData();
-    return newTransaction;
-  },
-  
-  // Update a transaction
-  updateTransaction(id, updatedData) {
-    const index = this.data.transactions.findIndex(t => t.id === id);
-    if (index !== -1) {
-      this.data.transactions[index] = {
-        ...this.data.transactions[index],
-        ...updatedData
-      };
-      this._saveData();
-      return this.data.transactions[index];
-    }
-    return null;
-  },
-  
-  // Delete a transaction
-  deleteTransaction(id) {
-    const index = this.data.transactions.findIndex(t => t.id === id);
-    if (index !== -1) {
-      const deleted = this.data.transactions.splice(index, 1)[0];
-      this._saveData();
-      return deleted;
-    }
-    return null;
-  },
-  
-  // Get all categories
-  getCategories() {
-    return this.data.categories;
-  },
-  
-  // Get categories by type
-  getCategoriesByType(type) {
-    return this.data.categories.filter(c => c.type === type);
-  },
-  
-  // Add a new category
-  addCategory(category) {
-    const newCategory = {
-      id: this._generateId(),
-      ...category
-    };
-    
-    this.data.categories.push(newCategory);
-    this._saveData();
-    return newCategory;
-  },
-  
-  // Update a category
-  updateCategory(id, updatedData) {
-    const index = this.data.categories.findIndex(c => c.id === id);
-    if (index !== -1) {
-      this.data.categories[index] = {
-        ...this.data.categories[index],
-        ...updatedData
-      };
-      this._saveData();
-      return this.data.categories[index];
-    }
-    return null;
-  },
-  
-  // Delete a category
-  deleteCategory(id) {
-    const index = this.data.categories.findIndex(c => c.id === id);
-    if (index !== -1) {
-      // Check if category is used in transactions
-      const isUsed = this.data.transactions.some(t => t.category === this.data.categories[index].name);
-      if (isUsed) {
-        return { error: 'Category is used in transactions and cannot be deleted' };
+  // Public methods
+  return {
+    register: function(name, email, password) {
+      // Check if user already exists
+      if (findUserByEmail(email)) {
+        return { success: false, error: 'Email already in use' };
       }
       
-      // Check if category is used in budgets
-      const isUsedInBudget = this.data.budgets.some(b => b.category === this.data.categories[index].name);
-      if (isUsedInBudget) {
-        return { error: 'Category is used in budgets and cannot be deleted' };
+      // Create new user
+      const newUser = {
+        id: crypto.randomUUID(),
+        name,
+        email,
+        password,
+        avatar: null,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Add to users array
+      const users = getUsers();
+      users.push(newUser);
+      saveUsers(users);
+      
+      // Set current user
+      const userToStore = { ...newUser };
+      delete userToStore.password; // Don't store password in session
+      localStorage.setItem(userStorageKey, JSON.stringify(userToStore));
+      
+      return { success: true };
+    },
+    
+    login: function(email, password) {
+      // Find user
+      const user = findUserByEmail(email);
+      
+      if (!user) {
+        return { success: false, error: 'User not found' };
       }
       
-      const deleted = this.data.categories.splice(index, 1)[0];
-      this._saveData();
-      return deleted;
-    }
-    return null;
-  },
-  
-  // Get all budgets
-  getBudgets() {
-    return this.data.budgets;
-  },
-  
-  // Add a new budget
-  addBudget(budget) {
-    // Check if budget already exists for this category
-    const existingBudget = this.data.budgets.find(b => b.category === budget.category);
-    if (existingBudget) {
-      return { error: 'A budget for this category already exists' };
-    }
+      if (user.password !== password) {
+        return { success: false, error: 'Invalid password' };
+      }
+      
+      // Set current user
+      const userToStore = { ...user };
+      delete userToStore.password; // Don't store password in session
+      localStorage.setItem(userStorageKey, JSON.stringify(userToStore));
+      
+      return { success: true };
+    },
     
-    const newBudget = {
-      id: this._generateId(),
-      ...budget
-    };
+    logout: function() {
+      localStorage.removeItem(userStorageKey);
+    },
     
-    this.data.budgets.push(newBudget);
-    this._saveData();
-    return newBudget;
-  },
-  
-  // Update a budget
-  updateBudget(id, updatedData) {
-    const index = this.data.budgets.findIndex(b => b.id === id);
-    if (index !== -1) {
-      // Check if updating to a category that already has a budget
-      if (updatedData.category && updatedData.category !== this.data.budgets[index].category) {
-        const existingBudget = this.data.budgets.find(b => 
-          b.id !== id && b.category === updatedData.category
+    getCurrentUser: function() {
+      const userJSON = localStorage.getItem(userStorageKey);
+      return userJSON ? JSON.parse(userJSON) : null;
+    },
+    
+    updateUserProfile: function(name, email) {
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        return { success: false, error: 'Not logged in' };
+      }
+      
+      // Get users array
+      const users = getUsers();
+      const userIndex = users.findIndex(u => u.id === currentUser.id);
+      
+      if (userIndex === -1) {
+        return { success: false, error: 'User not found' };
+      }
+      
+      // Check if new email is already in use
+      if (email !== currentUser.email) {
+        const emailExists = users.some(u => 
+          u.id !== currentUser.id && u.email.toLowerCase() === email.toLowerCase()
         );
-        if (existingBudget) {
-          return { error: 'A budget for this category already exists' };
+        
+        if (emailExists) {
+          return { success: false, error: 'Email already in use' };
         }
       }
       
-      this.data.budgets[index] = {
-        ...this.data.budgets[index],
-        ...updatedData
-      };
-      this._saveData();
-      return this.data.budgets[index];
-    }
-    return null;
-  },
-  
-  // Delete a budget
-  deleteBudget(id) {
-    const index = this.data.budgets.findIndex(b => b.id === id);
-    if (index !== -1) {
-      const deleted = this.data.budgets.splice(index, 1)[0];
-      this._saveData();
-      return deleted;
-    }
-    return null;
-  },
-  
-  // Get transactions by month
-  getTransactionsByMonth(month, year) {
-    const startDate = new Date(year, month, 1);
-    const endDate = new Date(year, month + 1, 0);
-    
-    return this.data.transactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date);
-      return transactionDate >= startDate && transactionDate <= endDate;
-    });
-  },
-  
-  // Get transactions by date range
-  getTransactionsByDateRange(startDate, endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    return this.data.transactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date);
-      return transactionDate >= start && transactionDate <= end;
-    });
-  },
-  
-  // Get total income for a specific month
-  getTotalIncomeByMonth(month, year) {
-    const transactions = this.getTransactionsByMonth(month, year);
-    return transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-  },
-  
-  // Get total expenses for a specific month
-  getTotalExpensesByMonth(month, year) {
-    const transactions = this.getTransactionsByMonth(month, year);
-    return transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-  },
-  
-  // Get expenses by category for a specific month
-  getExpensesByCategory(month, year) {
-    const transactions = this.getTransactionsByMonth(month, year);
-    const expensesByCategory = {};
-    
-    transactions
-      .filter(t => t.type === 'expense')
-      .forEach(transaction => {
-        if (!expensesByCategory[transaction.category]) {
-          expensesByCategory[transaction.category] = 0;
-        }
-        expensesByCategory[transaction.category] += Number(transaction.amount);
-      });
-    
-    return expensesByCategory;
-  },
-  
-  // Get income by category for a specific month
-  getIncomeByCategory(month, year) {
-    const transactions = this.getTransactionsByMonth(month, year);
-    const incomeByCategory = {};
-    
-    transactions
-      .filter(t => t.type === 'income')
-      .forEach(transaction => {
-        if (!incomeByCategory[transaction.category]) {
-          incomeByCategory[transaction.category] = 0;
-        }
-        incomeByCategory[transaction.category] += Number(transaction.amount);
-      });
-    
-    return incomeByCategory;
-  },
-  
-  // Calculate budget progress
-  calculateBudgetProgress(budgetId) {
-    const budget = this.data.budgets.find(b => b.id === budgetId);
-    if (!budget) return null;
-    
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    const transactions = this.getTransactionsByMonth(currentMonth, currentYear);
-    const spent = transactions
-      .filter(t => t.type === 'expense' && t.category === budget.category)
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    
-    const percentage = (spent / budget.amount) * 100;
-    const status = percentage <= 50 ? 'normal' : percentage <= 80 ? 'warning' : 'danger';
-    const remaining = budget.amount - spent;
-    
-    return {
-      spent,
-      percentage,
-      remaining,
-      status
-    };
-  },
-  
-  // Get monthly spending trend
-  getMonthlySpendingTrend(months = 6) {
-    const result = [];
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    for (let i = 0; i < months; i++) {
-      const targetMonth = (currentMonth - i + 12) % 12;
-      const targetYear = currentYear - Math.floor((i - currentMonth) / 12);
+      // Update user in users array
+      users[userIndex].name = name;
+      users[userIndex].email = email;
+      saveUsers(users);
       
-      const monthName = new Date(targetYear, targetMonth, 1).toLocaleString('default', { month: 'short' });
-      const income = this.getTotalIncomeByMonth(targetMonth, targetYear);
-      const expenses = this.getTotalExpensesByMonth(targetMonth, targetYear);
+      // Update current user
+      currentUser.name = name;
+      currentUser.email = email;
+      localStorage.setItem(userStorageKey, JSON.stringify(currentUser));
       
-      result.unshift({
-        month: monthName,
-        income,
-        expenses
-      });
-    }
+      return { success: true };
+    },
     
-    return result;
-  }
-};
+    updateUserAvatar: function(avatarUrl) {
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        return { success: false, error: 'Not logged in' };
+      }
+      
+      // Get users array
+      const users = getUsers();
+      const userIndex = users.findIndex(u => u.id === currentUser.id);
+      
+      if (userIndex === -1) {
+        return { success: false, error: 'User not found' };
+      }
+      
+      // Update user in users array
+      users[userIndex].avatar = avatarUrl;
+      saveUsers(users);
+      
+      // Update current user
+      currentUser.avatar = avatarUrl;
+      localStorage.setItem(userStorageKey, JSON.stringify(currentUser));
+      
+      return { success: true };
+    },
+    
+    changePassword: function(currentPassword, newPassword) {
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
+        return { success: false, error: 'Not logged in' };
+      }
+      
+      // Get users array
+      const users = getUsers();
+      const userIndex = users.findIndex(u => u.id === currentUser.id);
+      
+      if (userIndex === -1) {
+        return { success: false, error: 'User not found' };
+      }
+      
+      // Verify current password
+      if (users[userIndex].password !== currentPassword) {
+        return { success: false, error: 'Current password is incorrect' };
+      }
+      
+      // Update password
+      users[userIndex].password = newPassword;
+      saveUsers(users);
+      
+      return { success: true };
+    }
+  };
+})();
 
-// Initialize the data
-ExpenseTracker.init();
+// Expense Tracker System
+const ExpenseTracker = (function() {
+  // Private variables
+  const transactionsStorageKey = 'expenseTrackerTransactions';
+  const categoriesStorageKey = 'expenseTrackerCategories';
+  const budgetsStorageKey = 'expenseTrackerBudgets';
+  
+  // Get user ID suffix for storage keys
+  const getUserIdSuffix = function() {
+    const currentUser = Auth.getCurrentUser();
+    return currentUser ? `-${currentUser.id}` : '';
+  };
+  
+  // Private methods
+  const getUserTransactionsKey = function() {
+    return transactionsStorageKey + getUserIdSuffix();
+  };
+  
+  const getUserCategoriesKey = function() {
+    return categoriesStorageKey + getUserIdSuffix();
+  };
+  
+  const getUserBudgetsKey = function() {
+    return budgetsStorageKey + getUserIdSuffix();
+  };
+  
+  // Initialize with default data if needed
+  const initializeDefaultData = function() {
+    // Check if categories exist
+    const categoriesJSON = localStorage.getItem(getUserCategoriesKey());
+    
+    if (!categoriesJSON) {
+      // Default income categories
+      const defaultIncomeCategories = [
+        { id: '1', type: 'income', name: 'Salary', color: '#10b981', icon: 'money-bill-wave' },
+        { id: '2', type: 'income', name: 'Freelance', color: '#3b82f6', icon: 'laptop-code' },
+        { id: '3', type: 'income', name: 'Investments', color: '#f59e0b', icon: 'chart-line' }
+      ];
+      
+      // Default expense categories
+      const defaultExpenseCategories = [
+        { id: '4', type: 'expense', name: 'Food', color: '#ef4444', icon: 'utensils' },
+        { id: '5', type: 'expense', name: 'Transportation', color: '#6366f1', icon: 'car' },
+        { id: '6', type: 'expense', name: 'Housing', color: '#8b5cf6', icon: 'home' },
+        { id: '7', type: 'expense', name: 'Entertainment', color: '#ec4899', icon: 'film' },
+        { id: '8', type: 'expense', name: 'Shopping', color: '#f97316', icon: 'shopping-bag' },
+        { id: '9', type: 'expense', name: 'Utilities', color: '#14b8a6', icon: 'bolt' }
+      ];
+      
+      // Save default categories
+      localStorage.setItem(
+        getUserCategoriesKey(),
+        JSON.stringify([...defaultIncomeCategories, ...defaultExpenseCategories])
+      );
+    }
+  };
+  
+  // Public methods
+  return {
+    init: function() {
+      const currentUser = Auth.getCurrentUser();
+      if (currentUser) {
+        initializeDefaultData();
+      }
+    },
+    
+    // Transactions methods
+    getTransactions: function() {
+      const transactionsJSON = localStorage.getItem(getUserTransactionsKey());
+      return transactionsJSON ? JSON.parse(transactionsJSON) : [];
+    },
+    
+    addTransaction: function(transaction) {
+      const transactions = this.getTransactions();
+      const newTransaction = {
+        ...transaction,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString()
+      };
+      
+      transactions.push(newTransaction);
+      localStorage.setItem(getUserTransactionsKey(), JSON.stringify(transactions));
+      
+      return newTransaction;
+    },
+    
+    updateTransaction: function(id, updatedTransaction) {
+      const transactions = this.getTransactions();
+      const index = transactions.findIndex(t => t.id === id);
+      
+      if (index !== -1) {
+        transactions[index] = { 
+          ...transactions[index], 
+          ...updatedTransaction,
+          updatedAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem(getUserTransactionsKey(), JSON.stringify(transactions));
+        return transactions[index];
+      }
+      
+      return null;
+    },
+    
+    deleteTransaction: function(id) {
+      const transactions = this.getTransactions();
+      const filteredTransactions = transactions.filter(t => t.id !== id);
+      
+      localStorage.setItem(getUserTransactionsKey(), JSON.stringify(filteredTransactions));
+      
+      return { success: true };
+    },
+    
+    getTransactionsByMonth: function(month, year) {
+      const transactions = this.getTransactions();
+      
+      return transactions.filter(transaction => {
+        const transactionDate = new Date(transaction.date);
+        return transactionDate.getMonth() === month && transactionDate.getFullYear() === year;
+      });
+    },
+    
+    getTransactionsByDateRange: function(from, to) {
+      const transactions = this.getTransactions();
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
+      
+      return transactions.filter(transaction => {
+        const transactionDate = new Date(transaction.date);
+        return transactionDate >= fromDate && transactionDate <= toDate;
+      });
+    },
+    
+    // Categories methods
+    getCategories: function() {
+      const categoriesJSON = localStorage.getItem(getUserCategoriesKey());
+      return categoriesJSON ? JSON.parse(categoriesJSON) : [];
+    },
+    
+    getCategoriesByType: function(type) {
+      const categories = this.getCategories();
+      return categories.filter(category => category.type === type);
+    },
+    
+    addCategory: function(category) {
+      const categories = this.getCategories();
+      const newCategory = {
+        ...category,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString()
+      };
+      
+      categories.push(newCategory);
+      localStorage.setItem(getUserCategoriesKey(), JSON.stringify(categories));
+      
+      return newCategory;
+    },
+    
+    deleteCategory: function(id) {
+      const categories = this.getCategories();
+      const categoryToDelete = categories.find(c => c.id === id);
+      
+      if (!categoryToDelete) {
+        return { success: false, error: 'Category not found' };
+      }
+      
+      // Check if category is in use
+      const transactions = this.getTransactions();
+      const isInUse = transactions.some(t => t.category === categoryToDelete.name);
+      
+      if (isInUse) {
+        return { 
+          success: false, 
+          error: 'Cannot delete category that is in use by transactions' 
+        };
+      }
+      
+      const filteredCategories = categories.filter(c => c.id !== id);
+      localStorage.setItem(getUserCategoriesKey(), JSON.stringify(filteredCategories));
+      
+      return { success: true };
+    },
+    
+    // Budgets methods
+    getBudgets: function() {
+      const budgetsJSON = localStorage.getItem(getUserBudgetsKey());
+      return budgetsJSON ? JSON.parse(budgetsJSON) : [];
+    },
+    
+    addBudget: function(budget) {
+      // Check if budget for this category already exists
+      const budgets = this.getBudgets();
+      const exists = budgets.some(b => 
+        b.category === budget.category && b.period === budget.period
+      );
+      
+      if (exists) {
+        return { 
+          success: false, 
+          error: `Budget for ${budget.category} already exists for ${budget.period} period` 
+        };
+      }
+      
+      const newBudget = {
+        ...budget,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString()
+      };
+      
+      budgets.push(newBudget);
+      localStorage.setItem(getUserBudgetsKey(), JSON.stringify(budgets));
+      
+      return { success: true, budget: newBudget };
+    },
+    
+    deleteBudget: function(id) {
+      const budgets = this.getBudgets();
+      const filteredBudgets = budgets.filter(b => b.id !== id);
+      
+      localStorage.setItem(getUserBudgetsKey(), JSON.stringify(filteredBudgets));
+      
+      return { success: true };
+    },
+    
+    calculateBudgetProgress: function(budgetId) {
+      const budgets = this.getBudgets();
+      const budget = budgets.find(b => b.id === budgetId);
+      
+      if (!budget) return null;
+      
+      let transactions = this.getTransactions();
+      
+      // Filter transactions by category
+      transactions = transactions.filter(t => 
+        t.type === 'expense' && t.category === budget.category
+      );
+      
+      // Filter by period
+      const today = new Date();
+      
+      if (budget.period === 'monthly') {
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        
+        transactions = transactions.filter(t => {
+          const date = new Date(t.date);
+          return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+        });
+      } else if (budget.period === 'yearly') {
+        const currentYear = today.getFullYear();
+        
+        transactions = transactions.filter(t => {
+          const date = new Date(t.date);
+          return date.getFullYear() === currentYear;
+        });
+      } else if (budget.period === 'weekly') {
+        // Calculate the start of the current week (Sunday)
+        const currentWeekStart = new Date(today);
+        currentWeekStart.setDate(today.getDate() - today.getDay());
+        currentWeekStart.setHours(0, 0, 0, 0);
+        
+        // Calculate the end of the current week (Saturday)
+        const currentWeekEnd = new Date(currentWeekStart);
+        currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+        currentWeekEnd.setHours(23, 59, 59, 999);
+        
+        transactions = transactions.filter(t => {
+          const date = new Date(t.date);
+          return date >= currentWeekStart && date <= currentWeekEnd;
+        });
+      }
+      
+      // Calculate total spent
+      const spent = transactions.reduce((total, t) => total + t.amount, 0);
+      
+      // Calculate percentage
+      const percentage = (spent / budget.amount) * 100;
+      
+      // Calculate remaining amount
+      const remaining = budget.amount - spent;
+      
+      // Determine status
+      let status = 'safe';
+      if (percentage >= 80) {
+        status = 'danger';
+      } else if (percentage >= 50) {
+        status = 'warning';
+      }
+      
+      return {
+        spent,
+        percentage,
+        remaining,
+        status
+      };
+    },
+    
+    getTotalIncomeByMonth: function(month, year) {
+      const transactions = this.getTransactionsByMonth(month, year);
+      return transactions
+        .filter(t => t.type === 'income')
+        .reduce((total, t) => total + t.amount, 0);
+    },
+    
+    getTotalExpensesByMonth: function(month, year) {
+      const transactions = this.getTransactionsByMonth(month, year);
+      return transactions
+        .filter(t => t.type === 'expense')
+        .reduce((total, t) => total + t.amount, 0);
+    },
+    
+    importTransactions: function(transactions) {
+      localStorage.setItem(getUserTransactionsKey(), JSON.stringify(transactions));
+    },
+    
+    importCategories: function(categories) {
+      localStorage.setItem(getUserCategoriesKey(), JSON.stringify(categories));
+    },
+    
+    importBudgets: function(budgets) {
+      localStorage.setItem(getUserBudgetsKey(), JSON.stringify(budgets));
+    },
+    
+    clearAllData: function() {
+      localStorage.removeItem(getUserTransactionsKey());
+      localStorage.removeItem(getUserCategoriesKey());
+      localStorage.removeItem(getUserBudgetsKey());
+      
+      // Reinitialize defaults
+      initializeDefaultData();
+    }
+  };
+})();
+
+// Initialize ExpenseTracker when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if user is logged in first
+  const currentUser = Auth.getCurrentUser();
+  
+  // Redirect to login if not logged in (except on login/register pages)
+  if (!currentUser && 
+      !window.location.pathname.includes('login.html') && 
+      !window.location.pathname.includes('register.html')) {
+    window.location.href = 'login.html';
+    return;
+  }
+  
+  // Initialize if user is logged in
+  if (currentUser) {
+    ExpenseTracker.init();
+  }
+});

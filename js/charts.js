@@ -1,129 +1,55 @@
 
 // Charts related functions
 const Charts = {
-  // Store chart instances to destroy them when needed
-  chartInstances: {},
-  
   // Initialize dashboard charts
-  initDashboardCharts() {
-    this.initExpenseChart();
+  initDashboardCharts: function() {
     this.initIncomeExpenseChart();
+    this.initExpenseBreakdownChart();
   },
   
-  // Initialize expense breakdown chart
-  initExpenseChart() {
-    const ctx = document.getElementById('expense-chart');
-    if (!ctx) return;
-    
-    // Destroy existing chart if it exists
-    if (this.chartInstances.expenseChart) {
-      this.chartInstances.expenseChart.destroy();
-    }
+  // Initialize report charts
+  initReportCharts: function(month, year) {
+    this.initMonthlyOverviewChart(month, year);
+    this.initExpenseTrendChart(month, year);
+    this.initTopCategoriesChart(month, year);
+    this.initIncomeSourcesChart(month, year);
+  },
+  
+  // Income vs Expense chart
+  initIncomeExpenseChart: function() {
+    const chartElement = document.getElementById('income-expense-chart');
+    if (!chartElement) return;
     
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
-    const expensesByCategory = ExpenseTracker.getExpensesByCategory(currentMonth, currentYear);
+    // Get data for the last 6 months
+    const labels = [];
+    const incomeData = [];
+    const expenseData = [];
     
-    // Prepare data
-    const categories = Object.keys(expensesByCategory);
-    const amounts = Object.values(expensesByCategory);
+    for (let i = 5; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      const yearOffset = (currentMonth - i < 0) ? -1 : 0;
+      const year = currentYear + yearOffset;
+      
+      const monthName = new Date(year, monthIndex, 1)
+        .toLocaleString('default', { month: 'short' });
+      
+      labels.push(monthName);
+      
+      incomeData.push(ExpenseTracker.getTotalIncomeByMonth(monthIndex, year));
+      expenseData.push(ExpenseTracker.getTotalExpensesByMonth(monthIndex, year));
+    }
     
-    // Get colors for each category
-    const allCategories = ExpenseTracker.getCategories();
-    const colors = categories.map(categoryName => {
-      const category = allCategories.find(c => c.name === categoryName);
-      return category ? category.color : '#6366f1';
-    });
-    
-    if (categories.length === 0) {
-      ctx.parentElement.innerHTML = `
-        <h3>Expense Breakdown</h3>
-        <div class="empty-chart-message">No expense data for this month</div>
-      `;
-      return;
+    // Check if chart already exists
+    if (window.incomeExpenseChart) {
+      window.incomeExpenseChart.destroy();
     }
     
     // Create chart
-    this.chartInstances.expenseChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: categories,
-        datasets: [{
-          data: amounts,
-          backgroundColor: colors,
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              usePointStyle: true,
-              padding: 20
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const label = context.label || '';
-                const value = context.raw || 0;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = Math.round((value / total) * 100);
-                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
-              }
-            }
-          }
-        }
-      }
-    });
-    
-    // Add styles for empty chart message
-    const style = document.createElement('style');
-    style.textContent = `
-      .empty-chart-message {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 200px;
-        color: var(--muted-foreground);
-        font-size: 0.875rem;
-      }
-    `;
-    document.head.appendChild(style);
-  },
-  
-  // Initialize income vs expense chart
-  initIncomeExpenseChart() {
-    const ctx = document.getElementById('income-expense-chart');
-    if (!ctx) return;
-    
-    // Destroy existing chart if it exists
-    if (this.chartInstances.incomeExpenseChart) {
-      this.chartInstances.incomeExpenseChart.destroy();
-    }
-    
-    const monthlyData = ExpenseTracker.getMonthlySpendingTrend();
-    
-    if (monthlyData.length === 0) {
-      ctx.parentElement.innerHTML = `
-        <h3>Income vs Expenses</h3>
-        <div class="empty-chart-message">No data available</div>
-      `;
-      return;
-    }
-    
-    // Prepare data
-    const labels = monthlyData.map(item => item.month);
-    const incomeData = monthlyData.map(item => item.income);
-    const expenseData = monthlyData.map(item => item.expenses);
-    
-    // Create chart
-    this.chartInstances.incomeExpenseChart = new Chart(ctx, {
+    window.incomeExpenseChart = new Chart(chartElement, {
       type: 'bar',
       data: {
         labels: labels,
@@ -152,7 +78,7 @@ const Charts = {
             beginAtZero: true,
             ticks: {
               callback: function(value) {
-                return '$' + value;
+                return '₹' + value;
               }
             }
           }
@@ -161,14 +87,7 @@ const Charts = {
           tooltip: {
             callbacks: {
               label: function(context) {
-                let label = context.dataset.label || '';
-                if (label) {
-                  label += ': ';
-                }
-                if (context.parsed.y !== null) {
-                  label += '$' + context.parsed.y.toFixed(2);
-                }
-                return label;
+                return context.dataset.label + ': ₹' + context.raw.toFixed(2);
               }
             }
           }
@@ -177,44 +96,150 @@ const Charts = {
     });
   },
   
-  // Initialize all report charts
-  initReportCharts(month, year) {
-    this.initMonthlyOverviewChart(month, year);
-    this.initExpenseCategoriesChart(month, year);
-    this.initIncomeSourcesChart(month, year);
-    this.initMonthlyTrendChart();
-  },
-  
-  // Initialize monthly overview chart for reports
-  initMonthlyOverviewChart(month, year) {
-    const ctx = document.getElementById('monthly-overview-chart');
-    if (!ctx) return;
+  // Expense breakdown chart
+  initExpenseBreakdownChart: function() {
+    const chartElement = document.getElementById('expense-breakdown-chart');
+    if (!chartElement) return;
     
-    // Destroy existing chart if it exists
-    if (this.chartInstances.monthlyOverviewChart) {
-      this.chartInstances.monthlyOverviewChart.destroy();
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const transactions = ExpenseTracker.getTransactionsByMonth(currentMonth, currentYear);
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    
+    if (expenseTransactions.length === 0) {
+      chartElement.innerHTML = `
+        <div class="empty-chart">
+          <p>No expense data available</p>
+        </div>
+      `;
+      return;
     }
     
-    const income = ExpenseTracker.getTotalIncomeByMonth(month, year);
-    const expenses = ExpenseTracker.getTotalExpensesByMonth(month, year);
-    const balance = income - expenses;
+    // Group expenses by category
+    const categoryMap = {};
+    expenseTransactions.forEach(transaction => {
+      if (categoryMap[transaction.category]) {
+        categoryMap[transaction.category] += transaction.amount;
+      } else {
+        categoryMap[transaction.category] = transaction.amount;
+      }
+    });
+    
+    // Sort categories by amount (descending)
+    const sortedCategories = Object.keys(categoryMap).sort((a, b) => 
+      categoryMap[b] - categoryMap[a]
+    );
+    
+    // Get top 5 categories, group the rest as "Others"
+    const labels = [];
+    const data = [];
+    const backgroundColors = [];
+    
+    const categories = ExpenseTracker.getCategories();
+    
+    let otherAmount = 0;
+    
+    sortedCategories.forEach((category, index) => {
+      if (index < 5) {
+        labels.push(category);
+        data.push(categoryMap[category]);
+        
+        // Find category color
+        const categoryObj = categories.find(c => c.name === category);
+        backgroundColors.push(categoryObj ? categoryObj.color : '#6366f1');
+      } else {
+        otherAmount += categoryMap[category];
+      }
+    });
+    
+    // Add "Others" category if needed
+    if (otherAmount > 0) {
+      labels.push('Others');
+      data.push(otherAmount);
+      backgroundColors.push('#94a3b8');
+    }
+    
+    // Check if chart already exists
+    if (window.expenseBreakdownChart) {
+      window.expenseBreakdownChart.destroy();
+    }
     
     // Create chart
-    this.chartInstances.monthlyOverviewChart = new Chart(ctx, {
+    window.expenseBreakdownChart = new Chart(chartElement, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: backgroundColors,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                
+                return label + ': ₹' + value.toFixed(2) + ' (' + percentage + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+  
+  // Monthly overview chart
+  initMonthlyOverviewChart: function(month, year) {
+    const chartElement = document.getElementById('monthly-overview-chart');
+    if (!chartElement) return;
+    
+    const transactions = ExpenseTracker.getTransactionsByMonth(month, year);
+    
+    // Calculate total income and expenses
+    const totalIncome = transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const totalExpenses = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const balance = totalIncome - totalExpenses;
+    
+    // Check if chart already exists
+    if (window.monthlyOverviewChart) {
+      window.monthlyOverviewChart.destroy();
+    }
+    
+    // Create chart
+    window.monthlyOverviewChart = new Chart(chartElement, {
       type: 'bar',
       data: {
         labels: ['Income', 'Expenses', 'Balance'],
         datasets: [{
-          data: [income, expenses, balance],
+          data: [totalIncome, totalExpenses, balance],
           backgroundColor: [
-            'rgba(16, 185, 129, 0.7)',
-            'rgba(239, 68, 68, 0.7)',
-            'rgba(99, 102, 241, 0.7)'
+            'rgba(16, 185, 129, 0.7)', // Income
+            'rgba(239, 68, 68, 0.7)',  // Expenses
+            balance >= 0 ? 'rgba(59, 130, 246, 0.7)' : 'rgba(249, 115, 22, 0.7)' // Balance
           ],
           borderColor: [
             'rgba(16, 185, 129, 1)',
             'rgba(239, 68, 68, 1)',
-            'rgba(99, 102, 241, 1)'
+            balance >= 0 ? 'rgba(59, 130, 246, 1)' : 'rgba(249, 115, 22, 1)'
           ],
           borderWidth: 1
         }]
@@ -222,6 +247,16 @@ const Charts = {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value;
+              }
+            }
+          }
+        },
         plugins: {
           legend: {
             display: false
@@ -229,93 +264,8 @@ const Charts = {
           tooltip: {
             callbacks: {
               label: function(context) {
-                let label = context.label || '';
-                if (label) {
-                  label += ': ';
-                }
-                if (context.parsed.y !== null) {
-                  label += '$' + context.parsed.y.toFixed(2);
-                }
-                return label;
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return '$' + value;
-              }
-            }
-          }
-        }
-      }
-    });
-  },
-  
-  // Initialize expense categories chart for reports
-  initExpenseCategoriesChart(month, year) {
-    const ctx = document.getElementById('expense-categories-chart');
-    if (!ctx) return;
-    
-    // Destroy existing chart if it exists
-    if (this.chartInstances.expenseCategoriesChart) {
-      this.chartInstances.expenseCategoriesChart.destroy();
-    }
-    
-    const expensesByCategory = ExpenseTracker.getExpensesByCategory(month, year);
-    
-    // Prepare data
-    const categories = Object.keys(expensesByCategory);
-    const amounts = Object.values(expensesByCategory);
-    
-    // Get colors for each category
-    const allCategories = ExpenseTracker.getCategories();
-    const colors = categories.map(categoryName => {
-      const category = allCategories.find(c => c.name === categoryName);
-      return category ? category.color : '#6366f1';
-    });
-    
-    if (categories.length === 0) {
-      ctx.parentElement.innerHTML = `
-        <h3>Expense Categories</h3>
-        <div class="empty-chart-message">No expense data for this month</div>
-      `;
-      return;
-    }
-    
-    // Create chart
-    this.chartInstances.expenseCategoriesChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: categories,
-        datasets: [{
-          data: amounts,
-          backgroundColor: colors,
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              usePointStyle: true,
-              padding: 20
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const label = context.label || '';
                 const value = context.raw || 0;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = Math.round((value / total) * 100);
-                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                return '₹' + value.toFixed(2);
               }
             }
           }
@@ -324,157 +274,294 @@ const Charts = {
     });
   },
   
-  // Initialize income sources chart for reports
-  initIncomeSourcesChart(month, year) {
-    const ctx = document.getElementById('income-sources-chart');
-    if (!ctx) return;
+  // Expense trend chart
+  initExpenseTrendChart: function(month, year) {
+    const chartElement = document.getElementById('expense-trend-chart');
+    if (!chartElement) return;
     
-    // Destroy existing chart if it exists
-    if (this.chartInstances.incomeSourcesChart) {
-      this.chartInstances.incomeSourcesChart.destroy();
-    }
+    // Get days in the month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     
-    const incomeByCategory = ExpenseTracker.getIncomeByCategory(month, year);
+    // Get all transactions for the month
+    const transactions = ExpenseTracker.getTransactionsByMonth(month, year);
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
     
-    // Prepare data
-    const categories = Object.keys(incomeByCategory);
-    const amounts = Object.values(incomeByCategory);
+    // Group expenses by day
+    const dailyExpenses = Array(daysInMonth).fill(0);
     
-    // Get colors for each category
-    const allCategories = ExpenseTracker.getCategories();
-    const colors = categories.map(categoryName => {
-      const category = allCategories.find(c => c.name === categoryName);
-      return category ? category.color : '#6366f1';
+    expenseTransactions.forEach(transaction => {
+      const day = new Date(transaction.date).getDate() - 1; // 0-indexed
+      dailyExpenses[day] += transaction.amount;
     });
     
-    if (categories.length === 0) {
-      ctx.parentElement.innerHTML = `
-        <h3>Income Sources</h3>
-        <div class="empty-chart-message">No income data for this month</div>
-      `;
-      return;
+    // Calculate cumulative expenses
+    const cumulativeExpenses = [];
+    let runningTotal = 0;
+    
+    dailyExpenses.forEach(amount => {
+      runningTotal += amount;
+      cumulativeExpenses.push(runningTotal);
+    });
+    
+    // Create labels (days of month)
+    const labels = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    
+    // Check if chart already exists
+    if (window.expenseTrendChart) {
+      window.expenseTrendChart.destroy();
     }
     
     // Create chart
-    this.chartInstances.incomeSourcesChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: categories,
-        datasets: [{
-          data: amounts,
-          backgroundColor: colors,
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              usePointStyle: true,
-              padding: 20
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const label = context.label || '';
-                const value = context.raw || 0;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = Math.round((value / total) * 100);
-                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
-              }
-            }
-          }
-        }
-      }
-    });
-  },
-  
-  // Initialize monthly trend chart for reports
-  initMonthlyTrendChart() {
-    const ctx = document.getElementById('monthly-trend-chart');
-    if (!ctx) return;
-    
-    // Destroy existing chart if it exists
-    if (this.chartInstances.monthlyTrendChart) {
-      this.chartInstances.monthlyTrendChart.destroy();
-    }
-    
-    const monthlyData = ExpenseTracker.getMonthlySpendingTrend();
-    
-    if (monthlyData.length === 0) {
-      ctx.parentElement.innerHTML = `
-        <h3>Monthly Trend</h3>
-        <div class="empty-chart-message">No data available</div>
-      `;
-      return;
-    }
-    
-    // Prepare data
-    const labels = monthlyData.map(item => item.month);
-    const incomeData = monthlyData.map(item => item.income);
-    const expenseData = monthlyData.map(item => item.expenses);
-    const balanceData = monthlyData.map(item => item.income - item.expenses);
-    
-    // Create chart
-    this.chartInstances.monthlyTrendChart = new Chart(ctx, {
+    window.expenseTrendChart = new Chart(chartElement, {
       type: 'line',
       data: {
         labels: labels,
         datasets: [
           {
-            label: 'Income',
-            data: incomeData,
-            borderColor: 'rgba(16, 185, 129, 1)',
-            backgroundColor: 'rgba(16, 185, 129, 0.2)',
-            fill: false,
-            tension: 0.3
-          },
-          {
-            label: 'Expenses',
-            data: expenseData,
-            borderColor: 'rgba(239, 68, 68, 1)',
+            label: 'Daily Expenses',
+            data: dailyExpenses,
             backgroundColor: 'rgba(239, 68, 68, 0.2)',
-            fill: false,
-            tension: 0.3
+            borderColor: 'rgba(239, 68, 68, 1)',
+            borderWidth: 1,
+            pointRadius: 2,
+            type: 'bar',
+            yAxisID: 'y'
           },
           {
-            label: 'Balance',
-            data: balanceData,
+            label: 'Cumulative',
+            data: cumulativeExpenses,
             borderColor: 'rgba(99, 102, 241, 1)',
-            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+            borderWidth: 2,
+            pointRadius: 0,
+            type: 'line',
             fill: false,
-            tension: 0.3
+            yAxisID: 'y1'
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                let label = context.dataset.label || '';
-                if (label) {
-                  label += ': ';
-                }
-                if (context.parsed.y !== null) {
-                  label += '$' + context.parsed.y.toFixed(2);
-                }
-                return label;
+        scales: {
+          y: {
+            beginAtZero: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Daily'
+            },
+            ticks: {
+              callback: function(value) {
+                return '₹' + value;
+              }
+            }
+          },
+          y1: {
+            beginAtZero: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Cumulative'
+            },
+            grid: {
+              drawOnChartArea: false
+            },
+            ticks: {
+              callback: function(value) {
+                return '₹' + value;
               }
             }
           }
         },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw || 0;
+                return context.dataset.label + ': ₹' + value.toFixed(2);
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+  
+  // Top categories chart
+  initTopCategoriesChart: function(month, year) {
+    const chartElement = document.getElementById('top-categories-chart');
+    if (!chartElement) return;
+    
+    const transactions = ExpenseTracker.getTransactionsByMonth(month, year);
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    
+    if (expenseTransactions.length === 0) {
+      chartElement.innerHTML = `
+        <div class="empty-chart">
+          <p>No expense data available</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Group expenses by category
+    const categoryMap = {};
+    expenseTransactions.forEach(transaction => {
+      if (categoryMap[transaction.category]) {
+        categoryMap[transaction.category] += transaction.amount;
+      } else {
+        categoryMap[transaction.category] = transaction.amount;
+      }
+    });
+    
+    // Sort categories by amount (descending)
+    const sortedCategories = Object.keys(categoryMap).sort((a, b) => 
+      categoryMap[b] - categoryMap[a]
+    );
+    
+    // Get top 5 categories
+    const labels = [];
+    const data = [];
+    const backgroundColors = [];
+    
+    const categories = ExpenseTracker.getCategories();
+    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+    
+    // Only take the top 5 categories
+    const topCategories = sortedCategories.slice(0, 5);
+    
+    topCategories.forEach(category => {
+      labels.push(category);
+      data.push(categoryMap[category]);
+      
+      // Find category color
+      const categoryObj = categories.find(c => c.name === category);
+      backgroundColors.push(categoryObj ? categoryObj.color : '#6366f1');
+    });
+    
+    // Check if chart already exists
+    if (window.topCategoriesChart) {
+      window.topCategoriesChart.destroy();
+    }
+    
+    // Create chart
+    window.topCategoriesChart = new Chart(chartElement, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: backgroundColors,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
         scales: {
-          y: {
+          x: {
+            beginAtZero: true,
             ticks: {
               callback: function(value) {
-                return '$' + value;
+                return '₹' + value;
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw || 0;
+                const percentage = totalExpenses > 0 
+                  ? Math.round((value / totalExpenses) * 100) 
+                  : 0;
+                
+                return '₹' + value.toFixed(2) + ' (' + percentage + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+  
+  // Income sources chart
+  initIncomeSourcesChart: function(month, year) {
+    const chartElement = document.getElementById('income-sources-chart');
+    if (!chartElement) return;
+    
+    const transactions = ExpenseTracker.getTransactionsByMonth(month, year);
+    const incomeTransactions = transactions.filter(t => t.type === 'income');
+    
+    if (incomeTransactions.length === 0) {
+      chartElement.innerHTML = `
+        <div class="empty-chart">
+          <p>No income data available</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Group income by category
+    const categoryMap = {};
+    incomeTransactions.forEach(transaction => {
+      if (categoryMap[transaction.category]) {
+        categoryMap[transaction.category] += transaction.amount;
+      } else {
+        categoryMap[transaction.category] = transaction.amount;
+      }
+    });
+    
+    // Prepare data for pie chart
+    const labels = Object.keys(categoryMap);
+    const data = Object.values(categoryMap);
+    const backgroundColors = [];
+    
+    const categories = ExpenseTracker.getCategories();
+    
+    labels.forEach(category => {
+      // Find category color
+      const categoryObj = categories.find(c => c.name === category);
+      backgroundColors.push(categoryObj ? categoryObj.color : '#6366f1');
+    });
+    
+    // Check if chart already exists
+    if (window.incomeSourcesChart) {
+      window.incomeSourcesChart.destroy();
+    }
+    
+    // Create chart
+    window.incomeSourcesChart = new Chart(chartElement, {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: backgroundColors,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                
+                return label + ': ₹' + value.toFixed(2) + ' (' + percentage + '%)';
               }
             }
           }
