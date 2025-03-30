@@ -1,4 +1,3 @@
-
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize the auth system
@@ -68,7 +67,7 @@ function handleRegister(e) {
   if (result.success) {
     showToast('Account created successfully', 'success');
     setTimeout(() => {
-      window.location.href = 'index.html';
+      window.location.href = 'login.html'; // Redirect to login page after registration
     }, 1000);
   } else {
     showToast(result.error, 'error');

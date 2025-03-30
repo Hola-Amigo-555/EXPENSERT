@@ -1,4 +1,3 @@
-
 // Authentication System
 const Auth = (function() {
   // Private variables
@@ -228,6 +227,9 @@ const ExpenseTracker = (function() {
     }
   };
   
+  // Currency settings
+  const currencySymbol = '₹'; // Indian Rupee symbol
+  
   // Public methods
   return {
     init: function() {
@@ -235,6 +237,11 @@ const ExpenseTracker = (function() {
       if (currentUser) {
         initializeDefaultData();
       }
+    },
+    
+    // Get currency symbol
+    getCurrencySymbol: function() {
+      return currencySymbol;
     },
     
     // Transactions methods
