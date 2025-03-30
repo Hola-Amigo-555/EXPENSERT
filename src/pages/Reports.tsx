@@ -31,7 +31,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Download, FileBar, FilePieChart, FileLineChart } from "lucide-react";
+import { Download, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Reports = () => {
@@ -208,15 +208,15 @@ const Reports = () => {
       <Tabs defaultValue="overview">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center gap-2">
-            <FileBar size={16} />
+            <BarChart3 size={16} />
             Overview
           </TabsTrigger>
           <TabsTrigger value="expenses" className="flex items-center gap-2">
-            <FilePieChart size={16} />
+            <PieChartIcon size={16} />
             Category Analysis
           </TabsTrigger>
           <TabsTrigger value="trends" className="flex items-center gap-2">
-            <FileLineChart size={16} />
+            <LineChartIcon size={16} />
             Trends
           </TabsTrigger>
         </TabsList>
