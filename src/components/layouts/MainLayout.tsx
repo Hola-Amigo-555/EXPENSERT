@@ -4,10 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import CollapsibleSidebar from "@/components/navigation/CollapsibleSidebar";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function MainLayout() {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Load collapsed state from local storage

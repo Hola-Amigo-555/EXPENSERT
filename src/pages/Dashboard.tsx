@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useExpense } from "@/contexts/ExpenseContext";
 import FinancialSummary from "@/components/dashboard/FinancialSummary";
@@ -16,6 +17,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useToast } from "@/components/ui/use-toast";
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent 
+} from "@/components/ui/card";
 
 const Dashboard = () => {
   console.log("Dashboard component rendering");
