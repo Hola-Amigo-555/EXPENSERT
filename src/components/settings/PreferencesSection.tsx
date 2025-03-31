@@ -9,7 +9,6 @@ interface PreferencesSectionProps {
   darkMode: boolean;
   onCurrencyChange: (value: string) => void;
   onDarkModeToggle: (checked: boolean) => void;
-  onExportData: () => void;
 }
 
 const PreferencesSection = ({

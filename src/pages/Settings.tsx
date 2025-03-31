@@ -5,16 +5,18 @@ import ProfileSection from "@/components/settings/ProfileSection";
 import PreferencesSection from "@/components/settings/PreferencesSection";
 import DataManagementSection from "@/components/settings/DataManagementSection";
 import SecuritySection from "@/components/settings/SecuritySection";
+import PaymentMethodsSection from "@/components/settings/PaymentMethodsSection";
+import { useExpense } from "@/contexts/ExpenseContext";
 import { useToast } from "@/components/ui/use-toast";
 
 const Settings = () => {
   const { toast } = useToast();
+  const { paymentMethods, updatePaymentMethods, currencySymbol } = useExpense();
   const [userData, setUserData] = useState({
     name: "",
     email: "",
     avatar: null as string | null
   });
-  const [currency, setCurrency] = useState("₹");
   const [darkMode, setDarkMode] = useState(false);
 
   // Get user data on component mount
@@ -27,12 +29,6 @@ const Settings = () => {
         email: userData.email || "",
         avatar: userData.avatar || null
       });
-    }
-    
-    // Get currency preference
-    const savedCurrency = localStorage.getItem('currency');
-    if (savedCurrency) {
-      setCurrency(savedCurrency);
     }
     
     // Get dark mode preference
@@ -79,8 +75,9 @@ const Settings = () => {
   };
 
   const handleCurrencyChange = (value: string) => {
-    setCurrency(value);
     localStorage.setItem('currency', value);
+    // Dispatch a storage event to notify other components
+    window.dispatchEvent(new Event('storage'));
     toast({
       title: "Currency Updated",
       description: `Currency set to ${value}`,
@@ -97,14 +94,20 @@ const Settings = () => {
     });
   };
 
+  const handlePaymentMethodsUpdate = (methods: string[]) => {
+    updatePaymentMethods(methods);
+  };
+
   const handleExportData = () => {
     const exportData = {
-      transactions: localStorage.getItem('expenseTrackerTransactions') ? 
-        JSON.parse(localStorage.getItem('expenseTrackerTransactions')!) : [],
-      categories: localStorage.getItem('expenseTrackerCategories') ? 
-        JSON.parse(localStorage.getItem('expenseTrackerCategories')!) : [],
-      budgets: localStorage.getItem('expenseTrackerBudgets') ? 
-        JSON.parse(localStorage.getItem('expenseTrackerBudgets')!) : [],
+      transactions: localStorage.getItem('transactions') ? 
+        JSON.parse(localStorage.getItem('transactions')!) : [],
+      categories: localStorage.getItem('categories') ? 
+        JSON.parse(localStorage.getItem('categories')!) : [],
+      budgets: localStorage.getItem('budgets') ? 
+        JSON.parse(localStorage.getItem('budgets')!) : [],
+      paymentMethods: localStorage.getItem('paymentMethods') ? 
+        JSON.parse(localStorage.getItem('paymentMethods')!) : [],
     };
     
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -133,15 +136,21 @@ const Settings = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <ProfileSection userData={userData} onProfileUpdate={handleProfileUpdate} />
+        <div className="space-y-6">
+          <ProfileSection userData={userData} onProfileUpdate={handleProfileUpdate} />
+          
+          <PaymentMethodsSection 
+            paymentMethods={paymentMethods} 
+            onPaymentMethodsUpdate={handlePaymentMethodsUpdate} 
+          />
+        </div>
         
         <div className="space-y-6">
           <PreferencesSection 
-            currency={currency}
+            currency={currencySymbol}
             darkMode={darkMode}
             onCurrencyChange={handleCurrencyChange}
             onDarkModeToggle={handleDarkModeToggle}
-            onExportData={handleExportData}
           />
           
           <Separator className="my-4" />

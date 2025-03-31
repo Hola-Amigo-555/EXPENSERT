@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useExpense } from "@/contexts/ExpenseContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import FinancialSummary from "@/components/dashboard/FinancialSummary";
 import { ArrowUpRight, ArrowDownRight, DollarSign, PiggyBank, Wallet } from "lucide-react";
 import {
   PieChart,
@@ -33,10 +33,22 @@ const Dashboard = () => {
     } = useExpense();
     console.log("useExpense hook successfully accessed");
     
-    // Get the current month's data
+    // Get the current date
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
+    
+    // Get transactions for the current month
+    const currentMonthTransactions = useExpense().getTransactionsByMonth(
+      currentMonth,
+      currentYear
+    );
+    
+    // Calculate monthly income and expenses
+    const monthlyIncome = useExpense().getTotalIncome(currentMonthTransactions);
+    const monthlyExpenses = useExpense().getTotalExpenses(currentMonthTransactions);
+    
+    // Get the current month's data
     const thisMonthTransactions = getTransactionsByMonth(currentMonth, currentYear);
     console.log("This month's transactions:", thisMonthTransactions.length);
     
@@ -87,11 +99,17 @@ const Dashboard = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Overview of your financial situation
+            Overview of your financial activity
           </p>
         </div>
+
+        {/* Financial Summary Cards */}
+        <FinancialSummary
+          monthlyIncome={monthlyIncome}
+          monthlyExpenses={monthlyExpenses}
+        />
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -32,6 +33,8 @@ interface ExpenseContextType {
   transactions: Transaction[];
   categories: Category[];
   budgets: Budget[];
+  paymentMethods: string[];
+  currencySymbol: string;
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (transaction: Transaction) => void;
   deleteTransaction: (id: string) => void;
@@ -41,9 +44,11 @@ interface ExpenseContextType {
   addBudget: (budget: Omit<Budget, 'id'>) => void;
   updateBudget: (budget: Budget) => void;
   deleteBudget: (id: string) => void;
+  updatePaymentMethods: (methods: string[]) => void;
   getTransactionsByMonth: (month: number, year: number) => Transaction[];
   getTotalIncome: (transactions?: Transaction[]) => number;
   getTotalExpenses: (transactions?: Transaction[]) => number;
+  getTotalSavings: (transactions?: Transaction[]) => number;
 }
 
 // Default categories
@@ -148,7 +153,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return localStorage.getItem('currency') || '₹';
   });
 
-  const [paymentMethods] = useState(() => {
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(() => {
     const saved = localStorage.getItem('paymentMethods');
     return saved ? JSON.parse(saved) : defaultPaymentMethods;
   });
@@ -178,6 +183,10 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('budgets', JSON.stringify(budgets));
   }, [budgets]);
 
+  useEffect(() => {
+    localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
+  }, [paymentMethods]);
+
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction = { ...transaction, id: uuidv4() };
     setTransactions([...transactions, newTransaction]);
@@ -202,6 +211,10 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteCategory = (id: string) => {
     setCategories(categories.filter(c => c.id !== id));
+  };
+
+  const updatePaymentMethods = (methods: string[]) => {
+    setPaymentMethods(methods);
   };
 
   const addBudget = (budget: Omit<Budget, 'id'>) => {
@@ -238,11 +251,18 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       .reduce((total, t) => total + t.amount, 0);
   };
 
+  const getTotalSavings = (txs?: Transaction[]) => {
+    const transactionsToCalculate = txs || transactions;
+    return getTotalIncome(transactionsToCalculate) - getTotalExpenses(transactionsToCalculate);
+  };
+
   return (
     <ExpenseContext.Provider value={{
       transactions,
       categories,
       budgets,
+      paymentMethods,
+      currencySymbol,
       addTransaction,
       updateTransaction,
       deleteTransaction,
@@ -252,9 +272,11 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addBudget,
       updateBudget,
       deleteBudget,
+      updatePaymentMethods,
       getTransactionsByMonth,
       getTotalIncome,
       getTotalExpenses,
+      getTotalSavings,
     }}>
       {children}
     </ExpenseContext.Provider>

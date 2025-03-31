@@ -1,11 +1,10 @@
-import { useState } from "react";
-import { useExpense, Transaction, TransactionType, getPaymentMethods } from "@/contexts/ExpenseContext";
+
+import { useState, useMemo } from "react";
+import { useExpense, Transaction, TransactionType } from "@/contexts/ExpenseContext";
 import { 
   Card, 
   CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+  CardHeader
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,22 +38,34 @@ import {
   Edit, 
   Trash, 
   ArrowUpRight, 
-  ArrowDownRight, 
-  Filter,
+  ArrowDownRight,
   CreditCard
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TransactionFilter, { FilterCriteria, SortOption } from "@/components/transactions/TransactionFilter";
 
 const Transactions = () => {
   const { toast } = useToast();
-  const { transactions, categories, addTransaction, updateTransaction, deleteTransaction } = useExpense();
-  const paymentMethods = getPaymentMethods();
+  const { 
+    transactions, 
+    categories, 
+    paymentMethods, 
+    addTransaction, 
+    updateTransaction, 
+    deleteTransaction,
+    currencySymbol
+  } = useExpense();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TransactionType | "all">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<FilterCriteria>({
+    sort: "newest",
+    categories: [],
+    paymentMethods: []
+  });
   
   const [currentTransaction, setCurrentTransaction] = useState<Transaction | null>(null);
   const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({
@@ -66,18 +77,48 @@ const Transactions = () => {
     paymentMethod: ""
   });
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesTab = activeTab === "all" || transaction.type === activeTab;
-    const matchesSearch = 
-      transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesTab && matchesSearch;
-  });
+  // Filter transactions based on search, tab, and filter criteria
+  const filteredTransactions = useMemo(() => {
+    let result = transactions.filter(transaction => {
+      // Filter by tab
+      const matchesTab = activeTab === "all" || transaction.type === activeTab;
+      
+      // Filter by search term
+      const matchesSearch = 
+        transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Filter by categories
+      const matchesCategory = 
+        filters.categories.length === 0 || 
+        filters.categories.includes(transaction.category);
+      
+      // Filter by payment methods
+      const matchesPaymentMethod = 
+        filters.paymentMethods.length === 0 || 
+        (transaction.paymentMethod && filters.paymentMethods.includes(transaction.paymentMethod));
+      
+      return matchesTab && matchesSearch && matchesCategory && matchesPaymentMethod;
+    });
 
-  const sortedTransactions = [...filteredTransactions].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+    // Sort the transactions
+    result = [...result].sort((a, b) => {
+      switch (filters.sort) {
+        case "newest":
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        case "oldest":
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        case "amount-high":
+          return b.amount - a.amount;
+        case "amount-low":
+          return a.amount - b.amount;
+        default:
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+    });
+
+    return result;
+  }, [transactions, activeTab, searchTerm, filters]);
 
   const handleAddTransaction = () => {
     if (!newTransaction.category || !newTransaction.amount) {
@@ -179,7 +220,7 @@ const Transactions = () => {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="amount" className="text-sm font-medium">
-                    Amount ($)
+                    Amount ({currencySymbol})
                   </label>
                   <Input
                     id="amount"
@@ -291,9 +332,12 @@ const Transactions = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
+              <TransactionFilter 
+                categories={categories} 
+                paymentMethods={paymentMethods}
+                onFilterChange={setFilters}
+                activeFilters={filters}
+              />
             </div>
             <Tabs defaultValue="all" className="w-full sm:w-auto" value={activeTab} onValueChange={(value) => setActiveTab(value as TransactionType | "all")}>
               <TabsList className="grid grid-cols-3 w-full sm:w-[360px]">
@@ -318,8 +362,8 @@ const Transactions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedTransactions.length > 0 ? (
-                  sortedTransactions.map((transaction) => (
+                {filteredTransactions.length > 0 ? (
+                  filteredTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell>
                         {new Date(transaction.date).toLocaleDateString()}
@@ -344,7 +388,7 @@ const Transactions = () => {
                               transaction.type === "income" ? "text-green-500" : "text-red-500"
                             }
                           >
-                            ${transaction.amount.toFixed(2)}
+                            {currencySymbol}{transaction.amount.toFixed(2)}
                           </span>
                         </div>
                       </TableCell>
@@ -413,7 +457,7 @@ const Transactions = () => {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="edit-amount" className="text-sm font-medium">
-                    Amount ($)
+                    Amount ({currencySymbol})
                   </label>
                   <Input
                     id="edit-amount"
