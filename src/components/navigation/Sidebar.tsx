@@ -1,15 +1,16 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 import {
   LayoutDashboard,
   ListOrdered,
   Folder,
-  PieChart,
   LineChart,
   CreditCard,
   Settings,
   LogOut,
+  User,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -18,11 +19,25 @@ interface SidebarProps {
 
 const Sidebar = ({ closeSidebar }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = () => {
+    // Remove user from localStorage
+    localStorage.removeItem('expenseTrackerUser');
+    
+    toast({
+      title: "Success",
+      description: "Signed out successfully",
+    });
+    
+    navigate("/login");
+  };
 
   const navItems = [
     {
       name: "Dashboard",
-      href: "/",
+      href: "/dashboard",
       icon: LayoutDashboard,
     },
     {
@@ -45,15 +60,43 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
       href: "/reports",
       icon: LineChart,
     },
+    {
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+    },
   ];
+
+  // Get user data
+  const userDataJSON = localStorage.getItem('expenseTrackerUser');
+  const userData = userDataJSON ? JSON.parse(userDataJSON) : null;
+  const userName = userData?.name || 'User';
 
   return (
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
       <div className="flex items-center justify-center h-16 border-b border-sidebar-border">
-        <Link to="/" className="text-xl font-bold text-primary">
+        <Link to="/dashboard" className="text-xl font-bold text-primary">
           ExpenseTracker
         </Link>
       </div>
+      
+      {/* User Profile Section */}
+      <div className="p-4 border-b border-sidebar-border">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+            {userData?.avatar ? (
+              <img src={userData.avatar} alt={userName} className="w-full h-full rounded-full object-cover" />
+            ) : (
+              <User size={20} />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-sidebar-foreground">{userName}</p>
+            <p className="text-xs text-muted-foreground">{userData?.email || 'user@example.com'}</p>
+          </div>
+        </div>
+      </div>
+      
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="px-2 space-y-1">
           {navItems.map((item) => {
@@ -86,11 +129,10 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
       </div>
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex flex-col space-y-2">
-          <button className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent text-sidebar-foreground">
-            <Settings className="flex-shrink-0 w-5 h-5 mr-3 text-sidebar-foreground" />
-            Settings
-          </button>
-          <button className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent text-sidebar-foreground">
+          <button 
+            onClick={handleSignOut}
+            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
+          >
             <LogOut className="flex-shrink-0 w-5 h-5 mr-3 text-sidebar-foreground" />
             Sign Out
           </button>

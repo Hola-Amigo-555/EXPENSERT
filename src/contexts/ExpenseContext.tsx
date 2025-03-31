@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -129,7 +128,23 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : sampleBudgets;
   });
   
-  // Save to localStorage whenever state changes
+  const [currencySymbol, setCurrencySymbol] = useState(() => {
+    return localStorage.getItem('currency') || '₹';
+  });
+
+  useEffect(() => {
+    const handleCurrencyChange = () => {
+      const currency = localStorage.getItem('currency') || '₹';
+      setCurrencySymbol(currency);
+    };
+
+    window.addEventListener('storage', handleCurrencyChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleCurrencyChange);
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('transactions', JSON.stringify(transactions));
   }, [transactions]);
@@ -142,7 +157,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('budgets', JSON.stringify(budgets));
   }, [budgets]);
 
-  // Transaction functions
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction = { ...transaction, id: uuidv4() };
     setTransactions([...transactions, newTransaction]);
@@ -156,7 +170,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTransactions(transactions.filter(t => t.id !== id));
   };
 
-  // Category functions
   const addCategory = (category: Omit<Category, 'id'>) => {
     const newCategory = { ...category, id: uuidv4() };
     setCategories([...categories, newCategory]);
@@ -170,7 +183,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setCategories(categories.filter(c => c.id !== id));
   };
 
-  // Budget functions
   const addBudget = (budget: Omit<Budget, 'id'>) => {
     const newBudget = { ...budget, id: uuidv4() };
     setBudgets([...budgets, newBudget]);
@@ -184,7 +196,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setBudgets(budgets.filter(b => b.id !== id));
   };
 
-  // Helper functions
   const getTransactionsByMonth = (month: number, year: number) => {
     return transactions.filter(t => {
       const date = new Date(t.date);
