@@ -23,7 +23,7 @@ export default function MainLayout() {
   }, [isMobile]);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen w-full bg-background overflow-hidden">
       <CollapsibleSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       
       <main 
