@@ -1,32 +1,32 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import ProfileSection from "@/components/settings/ProfileSection";
+import PreferencesSection from "@/components/settings/PreferencesSection";
+import DataManagementSection from "@/components/settings/DataManagementSection";
+import SecuritySection from "@/components/settings/SecuritySection";
 import { useToast } from "@/components/ui/use-toast";
-import { User, Edit } from "lucide-react";
 
 const Settings = () => {
   const { toast } = useToast();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [avatar, setAvatar] = useState<string | null>(null);
+  const [userData, setUserData] = useState({
+    name: "",
+    email: "",
+    avatar: null as string | null
+  });
   const [currency, setCurrency] = useState("₹");
   const [darkMode, setDarkMode] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
   // Get user data on component mount
   useEffect(() => {
     const userDataJSON = localStorage.getItem('expenseTrackerUser');
     if (userDataJSON) {
       const userData = JSON.parse(userDataJSON);
-      setName(userData.name || "");
-      setEmail(userData.email || "");
-      setAvatar(userData.avatar || null);
+      setUserData({
+        name: userData.name || "",
+        email: userData.email || "",
+        avatar: userData.avatar || null
+      });
     }
     
     // Get currency preference
@@ -40,7 +40,7 @@ const Settings = () => {
     setDarkMode(darkModePreference);
   }, []);
 
-  const handleProfileUpdate = () => {
+  const handleProfileUpdate = (updatedUserData) => {
     // Get current user data
     const userDataJSON = localStorage.getItem('expenseTrackerUser');
     if (!userDataJSON) {
@@ -52,8 +52,8 @@ const Settings = () => {
       return;
     }
     
-    const userData = JSON.parse(userDataJSON);
-    const updatedUser = { ...userData, name, email, avatar };
+    const currentUserData = JSON.parse(userDataJSON);
+    const updatedUser = { ...currentUserData, ...updatedUserData };
     
     // Update user in localStorage
     localStorage.setItem('expenseTrackerUser', JSON.stringify(updatedUser));
@@ -62,33 +62,20 @@ const Settings = () => {
     const usersJSON = localStorage.getItem('expenseTrackerUsers');
     if (usersJSON) {
       const users = JSON.parse(usersJSON);
-      const userIndex = users.findIndex((u: any) => u.id === userData.id);
+      const userIndex = users.findIndex((u) => u.id === currentUserData.id);
       
       if (userIndex !== -1) {
-        users[userIndex] = { ...users[userIndex], name, email, avatar };
+        users[userIndex] = { ...users[userIndex], ...updatedUserData };
         localStorage.setItem('expenseTrackerUsers', JSON.stringify(users));
       }
     }
     
-    setIsEditing(false);
+    setUserData(prevData => ({ ...prevData, ...updatedUserData }));
     
     toast({
       title: "Success",
       description: "Profile updated successfully",
     });
-  };
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setAvatar(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleCurrencyChange = (value: string) => {
@@ -146,141 +133,27 @@ const Settings = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Profile Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>
-              Manage your personal information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
-                  {avatar ? (
-                    <img 
-                      src={avatar} 
-                      alt={name} 
-                      className="w-full h-full object-cover" 
-                    />
-                  ) : (
-                    <User size={40} />
-                  )}
-                </div>
-                {isEditing && (
-                  <div className="absolute bottom-0 right-0">
-                    <Label htmlFor="avatar-upload" className="cursor-pointer">
-                      <div className="bg-primary text-white p-2 rounded-full">
-                        <Edit size={16} />
-                      </div>
-                    </Label>
-                    <Input 
-                      id="avatar-upload" 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleAvatarChange}
-                    />
-                  </div>
-                )}
-              </div>
-              
-              {isEditing ? (
-                <div className="w-full space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input 
-                      id="name" 
-                      value={name} 
-                      onChange={(e) => setName(e.target.value)} 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
-                    />
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button onClick={handleProfileUpdate}>Save Changes</Button>
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-full space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium">{name}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{email}</p>
-                  </div>
-                  <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Preferences Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preferences</CardTitle>
-            <CardDescription>
-              Customize your application settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="currency">Currency</Label>
-                <p className="text-sm text-muted-foreground">
-                  Choose your preferred currency
-                </p>
-              </div>
-              <Select value={currency} onValueChange={handleCurrencyChange}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="₹">₹ (INR)</SelectItem>
-                  <SelectItem value="$">$ (USD)</SelectItem>
-                  <SelectItem value="€">€ (EUR)</SelectItem>
-                  <SelectItem value="£">£ (GBP)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Separator />
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="dark-mode">Dark Mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Enable dark theme for the application
-                </p>
-              </div>
-              <Switch 
-                id="dark-mode" 
-                checked={darkMode} 
-                onCheckedChange={handleDarkModeToggle} 
-              />
-            </div>
-
-            <Separator />
-            
-            <div className="pt-4">
-              <Button variant="outline" onClick={handleExportData} className="w-full">
-                Export Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <ProfileSection userData={userData} onProfileUpdate={handleProfileUpdate} />
+        
+        <div className="space-y-6">
+          <PreferencesSection 
+            currency={currency}
+            darkMode={darkMode}
+            onCurrencyChange={handleCurrencyChange}
+            onDarkModeToggle={handleDarkModeToggle}
+            onExportData={handleExportData}
+          />
+          
+          <Separator className="my-4" />
+          
+          <SecuritySection />
+          
+          <Separator className="my-4" />
+          
+          <DataManagementSection 
+            onExportData={handleExportData}
+          />
+        </div>
       </div>
     </div>
   );
