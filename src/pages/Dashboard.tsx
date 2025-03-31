@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useExpense } from "@/contexts/ExpenseContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +43,7 @@ const Dashboard = () => {
     const totalIncome = getTotalIncome(thisMonthTransactions);
     const totalExpenses = getTotalExpenses(thisMonthTransactions);
     const balance = totalIncome - totalExpenses;
+    const totalSavings = balance > 0 ? balance : 0; // Calculate savings as positive balance
     
     // Prepare data for expense breakdown chart
     const expenseCategories = categories.filter(c => c.type === 'expense');
@@ -94,7 +94,7 @@ const Dashboard = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Balance */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -137,6 +137,22 @@ const Dashboard = () => {
               </div>
               <p className="text-xs text-muted-foreground">
                 Total expenses for this month
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Savings - New Card */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Savings</CardTitle>
+              <PiggyBank className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-500">
+                ${totalSavings.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total savings for this month
               </p>
             </CardContent>
           </Card>
@@ -262,6 +278,11 @@ const Dashboard = () => {
                         <p className="text-sm text-muted-foreground">
                           {transaction.description}
                         </p>
+                        {transaction.paymentMethod && (
+                          <p className="text-xs text-muted-foreground">
+                            Payment Method: {transaction.paymentMethod}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">

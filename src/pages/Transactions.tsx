@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { useExpense, Transaction, TransactionType } from "@/contexts/ExpenseContext";
+import { useExpense, Transaction, TransactionType, getPaymentMethods } from "@/contexts/ExpenseContext";
 import { 
   Card, 
   CardContent, 
@@ -41,7 +40,8 @@ import {
   Trash, 
   ArrowUpRight, 
   ArrowDownRight, 
-  Filter 
+  Filter,
+  CreditCard
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,6 +49,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Transactions = () => {
   const { toast } = useToast();
   const { transactions, categories, addTransaction, updateTransaction, deleteTransaction } = useExpense();
+  const paymentMethods = getPaymentMethods();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -61,10 +62,10 @@ const Transactions = () => {
     category: "",
     description: "",
     date: new Date().toISOString().substring(0, 10),
-    type: "expense"
+    type: "expense",
+    paymentMethod: ""
   });
 
-  // Filter transactions based on tab and search term
   const filteredTransactions = transactions.filter(transaction => {
     const matchesTab = activeTab === "all" || transaction.type === activeTab;
     const matchesSearch = 
@@ -74,7 +75,6 @@ const Transactions = () => {
     return matchesTab && matchesSearch;
   });
 
-  // Sort transactions by date (newest first)
   const sortedTransactions = [...filteredTransactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -96,7 +96,8 @@ const Transactions = () => {
       category: "",
       description: "",
       date: new Date().toISOString().substring(0, 10),
-      type: "expense"
+      type: "expense",
+      paymentMethod: ""
     });
     
     toast({
@@ -232,6 +233,27 @@ const Transactions = () => {
                 />
               </div>
               <div className="space-y-2">
+                <label htmlFor="paymentMethod" className="text-sm font-medium">
+                  Payment Method
+                </label>
+                <Select
+                  onValueChange={(value) => 
+                    setNewTransaction({...newTransaction, paymentMethod: value})
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method, index) => (
+                      <SelectItem key={index} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <label htmlFor="date" className="text-sm font-medium">
                   Date
                 </label>
@@ -290,6 +312,7 @@ const Transactions = () => {
                   <TableHead>Date</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Category</TableHead>
+                  <TableHead>Payment Method</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -303,6 +326,12 @@ const Transactions = () => {
                       </TableCell>
                       <TableCell>{transaction.description}</TableCell>
                       <TableCell>{transaction.category}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <CreditCard className="h-4 w-4 mr-1 text-muted-foreground" />
+                          <span>{transaction.paymentMethod || 'N/A'}</span>
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center">
                           {transaction.type === "income" ? (
@@ -341,7 +370,7 @@ const Transactions = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6">
+                    <TableCell colSpan={6} className="text-center py-6">
                       No transactions found
                     </TableCell>
                   </TableRow>
@@ -352,7 +381,6 @@ const Transactions = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Transaction Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -438,6 +466,28 @@ const Transactions = () => {
                     setCurrentTransaction({...currentTransaction, description: e.target.value})
                   }
                 />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-paymentMethod" className="text-sm font-medium">
+                  Payment Method
+                </label>
+                <Select
+                  defaultValue={currentTransaction.paymentMethod}
+                  onValueChange={(value) => 
+                    setCurrentTransaction({...currentTransaction, paymentMethod: value})
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method, index) => (
+                      <SelectItem key={index} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label htmlFor="edit-date" className="text-sm font-medium">

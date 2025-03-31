@@ -60,6 +60,17 @@ const defaultCategories: Category[] = [
   { id: '10', name: 'Shopping', type: 'expense', color: '#0EA5E9' },
 ];
 
+// Default payment methods
+const defaultPaymentMethods = [
+  'Cash',
+  'Credit Card',
+  'Debit Card',
+  'Bank Transfer',
+  'Digital Wallet',
+  'Check',
+  'Other'
+];
+
 // Sample data for initial state
 const sampleTransactions: Transaction[] = [
   {
@@ -68,7 +79,8 @@ const sampleTransactions: Transaction[] = [
     category: 'Salary',
     description: 'Monthly salary',
     date: '2023-11-01',
-    type: 'income'
+    type: 'income',
+    paymentMethod: 'Bank Transfer'
   },
   {
     id: '2',
@@ -76,7 +88,8 @@ const sampleTransactions: Transaction[] = [
     category: 'Freelance',
     description: 'Website project',
     date: '2023-11-05',
-    type: 'income'
+    type: 'income',
+    paymentMethod: 'Digital Wallet'
   },
   {
     id: '3',
@@ -84,7 +97,8 @@ const sampleTransactions: Transaction[] = [
     category: 'Food',
     description: 'Grocery shopping',
     date: '2023-11-07',
-    type: 'expense'
+    type: 'expense',
+    paymentMethod: 'Credit Card'
   },
   {
     id: '4',
@@ -92,7 +106,8 @@ const sampleTransactions: Transaction[] = [
     category: 'Housing',
     description: 'Rent',
     date: '2023-11-01',
-    type: 'expense'
+    type: 'expense',
+    paymentMethod: 'Bank Transfer'
   },
   {
     id: '5',
@@ -100,7 +115,8 @@ const sampleTransactions: Transaction[] = [
     category: 'Entertainment',
     description: 'Movie tickets',
     date: '2023-11-12',
-    type: 'expense'
+    type: 'expense',
+    paymentMethod: 'Cash'
   }
 ];
 
@@ -130,6 +146,11 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   const [currencySymbol, setCurrencySymbol] = useState(() => {
     return localStorage.getItem('currency') || '₹';
+  });
+
+  const [paymentMethods] = useState(() => {
+    const saved = localStorage.getItem('paymentMethods');
+    return saved ? JSON.parse(saved) : defaultPaymentMethods;
   });
 
   useEffect(() => {
@@ -246,4 +267,9 @@ export const useExpense = () => {
     throw new Error('useExpense must be used within an ExpenseProvider');
   }
   return context;
+};
+
+export const getPaymentMethods = () => {
+  const saved = localStorage.getItem('paymentMethods');
+  return saved ? JSON.parse(saved) : defaultPaymentMethods;
 };
