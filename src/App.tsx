@@ -28,12 +28,12 @@ function App() {
         <Routes>
           {/* Auth routes */}
           <Route element={<AuthLayout />}>
-            <Route path="/login" element={!isLoggedIn ? <Login /> : <Navigate to="/dashboard" />} />
-            <Route path="/register" element={!isLoggedIn ? <Register /> : <Navigate to="/dashboard" />} />
+            <Route path="/login" element={!isLoggedIn ? <Login /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/register" element={!isLoggedIn ? <Register /> : <Navigate to="/dashboard" replace />} />
           </Route>
           
           {/* App routes - protected */}
-          <Route path="/" element={isLoggedIn ? <MainLayout /> : <Navigate to="/login" />}>
+          <Route path="/" element={isLoggedIn ? <MainLayout /> : <Navigate to="/login" replace />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="transactions" element={<Transactions />} />

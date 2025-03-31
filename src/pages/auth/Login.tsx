@@ -46,7 +46,8 @@ const Login = () => {
           description: "Logged in successfully",
         });
         
-        navigate("/dashboard");
+        // Force navigation to dashboard
+        navigate("/dashboard", { replace: true });
       } catch (error: any) {
         toast({
           variant: "destructive",
