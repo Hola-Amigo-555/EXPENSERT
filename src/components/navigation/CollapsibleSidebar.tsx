@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navigationItems = [
   { name: "Dashboard", path: "/dashboard", icon: Home },
@@ -86,6 +88,12 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
     // Redirect to login page
     window.location.href = '/login';
   };
+
+  // Get user data
+  const userDataJSON = localStorage.getItem('expenseTrackerUser');
+  const userData = userDataJSON ? JSON.parse(userDataJSON) : null;
+  const userName = userData?.name || 'User';
+  const userEmail = userData?.email || 'user@example.com';
 
   const sidebarClasses = cn(
     "flex flex-col h-screen bg-background border-r transition-all duration-300 z-20",
@@ -148,6 +156,34 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
                 })}
               />
             </Button>
+          )}
+        </div>
+        
+        {/* User Profile Section */}
+        <div className={cn("p-4 border-b", {
+          "flex justify-center": isCollapsed,
+          "": !isCollapsed
+        })}>
+          {isCollapsed ? (
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={userData?.avatar} alt={userName} />
+              <AvatarFallback>
+                <User className="h-5 w-5" />
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={userData?.avatar} alt={userName} />
+                <AvatarFallback>
+                  <User className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium text-sm">{userName}</p>
+                <p className="text-xs text-muted-foreground">{userEmail}</p>
+              </div>
+            </div>
           )}
         </div>
 

@@ -17,13 +17,13 @@ export default function MainLayout() {
       if (savedState !== null) {
         setIsCollapsed(savedState === "true");
       } else {
-        setIsCollapsed(true); // Default to collapsed
+        setIsCollapsed(false); // Default to expanded
       }
     }
   }, [isMobile]);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       <CollapsibleSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       
       <main 
