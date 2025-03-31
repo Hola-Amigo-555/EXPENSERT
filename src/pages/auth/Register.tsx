@@ -64,7 +64,8 @@ const Register = () => {
           description: "Account created successfully",
         });
         
-        navigate("/login");
+        // Force navigation to login page
+        window.location.href = "/login";
       } catch (error: any) {
         toast({
           variant: "destructive",

@@ -46,8 +46,8 @@ const Login = () => {
           description: "Logged in successfully",
         });
         
-        // Force navigation to dashboard
-        navigate("/dashboard", { replace: true });
+        // Force navigation to dashboard with replace to prevent going back to login
+        window.location.href = "/dashboard";
       } catch (error: any) {
         toast({
           variant: "destructive",

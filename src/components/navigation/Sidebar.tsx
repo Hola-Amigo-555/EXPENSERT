@@ -12,6 +12,17 @@ import {
   LogOut,
   User,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SidebarProps {
   closeSidebar?: () => void;
@@ -31,7 +42,8 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
       description: "Signed out successfully",
     });
     
-    navigate("/login");
+    // Redirect to login page
+    window.location.href = "/login";
   };
 
   const navItems = [
@@ -129,13 +141,28 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
       </div>
       <div className="p-4 border-t border-sidebar-border">
         <div className="flex flex-col space-y-2">
-          <button 
-            onClick={handleSignOut}
-            className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
-          >
-            <LogOut className="flex-shrink-0 w-5 h-5 mr-3 text-sidebar-foreground" />
-            Sign Out
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button 
+                className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
+              >
+                <LogOut className="flex-shrink-0 w-5 h-5 mr-3 text-sidebar-foreground" />
+                Sign Out
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Sign Out</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to sign out? Any unsaved changes will be lost.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSignOut}>Sign Out</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
