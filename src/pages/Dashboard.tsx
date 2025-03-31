@@ -37,7 +37,8 @@ const Dashboard = () => {
       budgets,
       getTotalIncome, 
       getTotalExpenses,
-      getTransactionsByMonth
+      getTransactionsByMonth,
+      currencySymbol
     } = useExpense();
     console.log("useExpense hook successfully accessed");
     
@@ -47,22 +48,20 @@ const Dashboard = () => {
     const currentYear = currentDate.getFullYear();
     
     // Get transactions for the current month
-    const currentMonthTransactions = useExpense().getTransactionsByMonth(
+    const currentMonthTransactions = getTransactionsByMonth(
       currentMonth,
       currentYear
     );
     
     // Calculate monthly income and expenses
-    const monthlyIncome = useExpense().getTotalIncome(currentMonthTransactions);
-    const monthlyExpenses = useExpense().getTotalExpenses(currentMonthTransactions);
+    const monthlyIncome = getTotalIncome(currentMonthTransactions);
+    const monthlyExpenses = getTotalExpenses(currentMonthTransactions);
     
     // Get the current month's data
     const thisMonthTransactions = getTransactionsByMonth(currentMonth, currentYear);
     console.log("This month's transactions:", thisMonthTransactions.length);
     
-    const totalIncome = getTotalIncome(thisMonthTransactions);
-    const totalExpenses = getTotalExpenses(thisMonthTransactions);
-    const balance = totalIncome - totalExpenses;
+    const balance = monthlyIncome - monthlyExpenses;
     const totalSavings = balance > 0 ? balance : 0; // Calculate savings as positive balance
     
     // Prepare data for expense breakdown chart
@@ -119,71 +118,6 @@ const Dashboard = () => {
           monthlyExpenses={monthlyExpenses}
         />
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* Balance */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${balance.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                Current balance for this month
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Income */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-              <ArrowUpRight className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-500">
-                ${totalIncome.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Total income for this month
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Expenses */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-              <ArrowDownRight className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-500">
-                ${totalExpenses.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Total expenses for this month
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Savings - New Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Savings</CardTitle>
-              <PiggyBank className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-500">
-                ${totalSavings.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Total savings for this month
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Charts and Lists */}
         <div className="grid gap-4 md:grid-cols-2">
           {/* Expense Breakdown */}
@@ -214,7 +148,7 @@ const Dashboard = () => {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value) => [`$${value}`, 'Amount']}
+                      formatter={(value) => [`${currencySymbol}${value}`, 'Amount']}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -243,10 +177,10 @@ const Dashboard = () => {
                     margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" tickFormatter={(value) => `$${value}`} />
+                    <XAxis type="number" tickFormatter={(value) => `${currencySymbol}${value}`} />
                     <YAxis type="category" dataKey="category" width={80} />
                     <Tooltip 
-                      formatter={(value) => [`$${value}`, 'Amount']}
+                      formatter={(value) => [`${currencySymbol}${value}`, 'Amount']}
                       labelFormatter={(label) => `Category: ${label}`}
                     />
                     <Legend />
@@ -315,7 +249,7 @@ const Dashboard = () => {
                       <p className={`font-medium ${
                         transaction.type === 'income' ? 'text-income' : 'text-expense'
                       }`}>
-                        {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                        {transaction.type === 'income' ? '+' : '-'}{currencySymbol}{transaction.amount.toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(transaction.date).toLocaleDateString()}

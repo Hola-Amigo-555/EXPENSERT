@@ -24,7 +24,7 @@ export default function MainLayout() {
 
   return (
     <div className="flex h-screen bg-background">
-      <CollapsibleSidebar />
+      <CollapsibleSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       
       <main 
         className={cn(

@@ -37,28 +37,26 @@ const navigationItems = [
   { name: "Settings", path: "/settings", icon: Settings },
 ];
 
-const CollapsibleSidebar = () => {
+interface CollapsibleSidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
+}
+
+const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarProps) => {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-  // Load collapsed state from local storage
-  useEffect(() => {
-    const savedState = localStorage.getItem("sidebarCollapsed");
-    if (savedState !== null) {
-      setIsCollapsed(savedState === "true");
-    }
-  }, []);
-
   // Save collapsed state to local storage
   useEffect(() => {
-    localStorage.setItem("sidebarCollapsed", isCollapsed.toString());
-  }, [isCollapsed]);
+    if (!isMobile) {
+      localStorage.setItem("sidebarCollapsed", isCollapsed.toString());
+    }
+  }, [isCollapsed, isMobile]);
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -127,11 +125,7 @@ const CollapsibleSidebar = () => {
         />
       )}
 
-      <div 
-        className={sidebarClasses}
-        onMouseEnter={() => !isMobile && setIsCollapsed(false)}
-        onMouseLeave={() => !isMobile && setIsCollapsed(true)}
-      >
+      <div className={sidebarClasses}>
         <div className="p-4 flex items-center justify-between border-b">
           <h1
             className={cn("font-bold text-lg transition-opacity duration-300", {
