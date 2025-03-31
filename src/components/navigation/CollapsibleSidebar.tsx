@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -53,14 +52,12 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
   const [isOpen, setIsOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-  // Save collapsed state to local storage
   useEffect(() => {
     if (!isMobile) {
       localStorage.setItem("sidebarCollapsed", isCollapsed.toString());
     }
   }, [isCollapsed, isMobile]);
 
-  // Close sidebar on mobile when route changes
   useEffect(() => {
     if (isMobile) {
       setIsOpen(false);
@@ -76,20 +73,14 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
   };
 
   const handleLogout = () => {
-    // Clear user data from local storage
     localStorage.removeItem('expenseTrackerUser');
-    
-    // Show toast
     toast({
       title: "Logged out",
       description: "You have been logged out successfully",
     });
-    
-    // Redirect to login page
     window.location.href = '/login';
   };
 
-  // Get user data
   const userDataJSON = localStorage.getItem('expenseTrackerUser');
   const userData = userDataJSON ? JSON.parse(userDataJSON) : null;
   const userName = userData?.name || 'User';
@@ -113,7 +104,6 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
 
   return (
     <>
-      {/* Mobile Menu Toggle */}
       {isMobile && (
         <Button
           variant="ghost"
@@ -125,7 +115,6 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
         </Button>
       )}
 
-      {/* Sidebar Backdrop (Mobile) */}
       {isMobile && isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-10"
@@ -141,7 +130,7 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
               "opacity-100": !isCollapsed,
             })}
           >
-            Expense Tracker
+            ExTrack
           </h1>
           {!isMobile && (
             <Button
@@ -159,7 +148,6 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
           )}
         </div>
         
-        {/* User Profile Section */}
         <div className={cn("p-4 border-b", {
           "flex justify-center": isCollapsed,
           "": !isCollapsed
@@ -245,7 +233,6 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
         </div>
       </div>
 
-      {/* Logout Confirmation Dialog */}
       <AlertDialog
         open={isLogoutDialogOpen}
         onOpenChange={setIsLogoutDialogOpen}

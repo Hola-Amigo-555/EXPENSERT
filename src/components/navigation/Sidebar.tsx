@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -34,7 +33,6 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
   const { toast } = useToast();
 
   const handleSignOut = () => {
-    // Remove user from localStorage
     localStorage.removeItem('expenseTrackerUser');
     
     toast({
@@ -42,7 +40,6 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
       description: "Signed out successfully",
     });
     
-    // Redirect to login page
     window.location.href = "/login";
   };
 
@@ -79,7 +76,6 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
     },
   ];
 
-  // Get user data
   const userDataJSON = localStorage.getItem('expenseTrackerUser');
   const userData = userDataJSON ? JSON.parse(userDataJSON) : null;
   const userName = userData?.name || 'User';
@@ -88,11 +84,10 @@ const Sidebar = ({ closeSidebar }: SidebarProps) => {
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
       <div className="flex items-center justify-center h-16 border-b border-sidebar-border">
         <Link to="/dashboard" className="text-xl font-bold text-primary">
-          ExpenseTracker
+          ExTrack
         </Link>
       </div>
       
-      {/* User Profile Section */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
