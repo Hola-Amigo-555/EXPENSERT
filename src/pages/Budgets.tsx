@@ -45,7 +45,8 @@ const Budgets = () => {
     addBudget, 
     updateBudget, 
     deleteBudget,
-    getTransactionsByMonth
+    getTransactionsByMonth,
+    currencySymbol
   } = useExpense();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -214,7 +215,7 @@ const Budgets = () => {
               </div>
               <div className="space-y-2">
                 <label htmlFor="amount" className="text-sm font-medium">
-                  Budget Amount ($)
+                  Budget Amount ({currencySymbol})
                 </label>
                 <Input
                   id="amount"
@@ -292,7 +293,7 @@ const Budgets = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>
-                    ${budget.spent.toFixed(2)} of ${budget.amount.toFixed(2)}
+                    {currencySymbol}{budget.spent.toFixed(2)} of {currencySymbol}{budget.amount.toFixed(2)}
                   </span>
                   <span className="font-medium">
                     {budget.percentage.toFixed(0)}%
@@ -324,7 +325,7 @@ const Budgets = () => {
                 <span className={`font-medium ${
                   budget.status === "danger" ? "text-red-500" : ""
                 }`}>
-                  ${budget.remaining.toFixed(2)}
+                  {currencySymbol}{budget.remaining.toFixed(2)}
                 </span>
               </div>
             </CardFooter>
@@ -391,7 +392,7 @@ const Budgets = () => {
               </div>
               <div className="space-y-2">
                 <label htmlFor="edit-amount" className="text-sm font-medium">
-                  Budget Amount ($)
+                  Budget Amount ({currencySymbol})
                 </label>
                 <Input
                   id="edit-amount"
