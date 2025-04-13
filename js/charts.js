@@ -431,11 +431,12 @@ const Charts = {
     const topCategories = sortedCategories.slice(0, 5);
     
     topCategories.forEach(category => {
-      labels.push(category);
+      // Find category object to get name
+      const categoryObj = categories.find(c => c.id === category);
+      labels.push(categoryObj ? categoryObj.name : 'Unknown');
       data.push(categoryMap[category]);
       
       // Find category color
-      const categoryObj = categories.find(c => c.name === category);
       backgroundColors.push(categoryObj ? categoryObj.color : '#6366f1');
     });
     
@@ -518,17 +519,21 @@ const Charts = {
     });
     
     // Prepare data for pie chart
-    const labels = Object.keys(categoryMap);
-    const data = Object.values(categoryMap);
+    const labels = [];
+    const data = [];
     const backgroundColors = [];
     
     const categories = ExpenseTracker.getCategories();
     
-    labels.forEach(category => {
+    for (const categoryId in categoryMap) {
+      // Find category object to get name
+      const categoryObj = categories.find(c => c.id === categoryId);
+      labels.push(categoryObj ? categoryObj.name : 'Unknown');
+      data.push(categoryMap[categoryId]);
+      
       // Find category color
-      const categoryObj = categories.find(c => c.name === category);
       backgroundColors.push(categoryObj ? categoryObj.color : '#6366f1');
-    });
+    }
     
     // Check if chart already exists
     if (window.incomeSourcesChart) {
