@@ -34,6 +34,9 @@ const Settings = () => {
     // Get dark mode preference
     const darkModePreference = localStorage.getItem('darkMode') === 'true';
     setDarkMode(darkModePreference);
+    
+    // Apply dark mode class at load time
+    document.documentElement.classList.toggle('dark', darkModePreference);
   }, []);
 
   const handleProfileUpdate = (updatedUserData) => {
@@ -87,7 +90,10 @@ const Settings = () => {
   const handleDarkModeToggle = (checked: boolean) => {
     setDarkMode(checked);
     localStorage.setItem('darkMode', checked.toString());
-    document.body.classList.toggle('dark-mode', checked);
+    
+    // Apply dark mode by toggling the 'dark' class on the document element
+    document.documentElement.classList.toggle('dark', checked);
+    
     toast({
       title: checked ? "Dark Mode Enabled" : "Light Mode Enabled",
       description: checked ? "Dark mode has been activated" : "Light mode has been activated",
