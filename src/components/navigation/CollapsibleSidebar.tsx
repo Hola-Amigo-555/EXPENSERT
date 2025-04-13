@@ -138,12 +138,17 @@ const CollapsibleSidebar = ({ isCollapsed, setIsCollapsed }: CollapsibleSidebarP
               variant="ghost"
               size="icon"
               onClick={toggleCollapse}
-              className="shrink-0"
+              className="shrink-0 cursor-pointer"
             >
               <ChevronLeft
-                className={cn("h-4 w-4 transition-transform", {
+                className={cn("h-4 w-4 transition-transform cursor-pointer", {
                   "rotate-180": isCollapsed,
                 })}
+                onClick={(e) => {
+                  // Ensure the click event still triggers even when clicking directly on the icon
+                  e.stopPropagation();
+                  toggleCollapse();
+                }}
               />
             </Button>
           )}
