@@ -33,9 +33,11 @@ import {
 } from "recharts";
 import { Download, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 
 const Reports = () => {
   const { transactions, categories, getTransactionsByMonth } = useExpense();
+  const { toast } = useToast();
   
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -141,6 +143,52 @@ const Reports = () => {
       balance
     });
   }
+
+  // Export report function
+  const handleExportReport = () => {
+    // Prepare report data
+    const reportData = {
+      period: `${months[selectedMonth]} ${selectedYear}`,
+      generated: new Date().toISOString(),
+      summary: {
+        totalIncome: filteredTransactions
+          .filter(t => t.type === "income")
+          .reduce((sum, t) => sum + t.amount, 0),
+        totalExpenses: filteredTransactions
+          .filter(t => t.type === "expense")
+          .reduce((sum, t) => sum + t.amount, 0),
+      },
+      expensesByCategory: expenseData,
+      incomeByCategory: incomeData,
+      dailyTransactions: dailyData,
+      monthlyComparison: monthlyData,
+      transactions: filteredTransactions
+    };
+
+    // Convert to JSON
+    const dataStr = JSON.stringify(reportData, null, 2);
+    
+    // Create download link
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    // Create download link and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `financial-report-${months[selectedMonth]}-${selectedYear}.json`;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Show success toast
+    toast({
+      title: "Report exported",
+      description: `Financial report for ${months[selectedMonth]} ${selectedYear} has been downloaded.`,
+    });
+  };
   
   return (
     <div className="space-y-6">
@@ -197,7 +245,11 @@ const Reports = () => {
                 </Select>
               </div>
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={handleExportReport}
+            >
               <Download size={16} />
               Export Report
             </Button>
