@@ -1,4 +1,3 @@
-
 // Authentication System
 const Auth = (function() {
   // Private variables

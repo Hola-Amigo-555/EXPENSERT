@@ -1,4 +1,3 @@
-
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize the auth system
