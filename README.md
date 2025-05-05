@@ -80,7 +80,7 @@ Build a web-based expense tracking system that enables users to:
    CALL generate_report(1, '2025-03-01', '2025-03-31');
    SELECT * FROM Reports;
 
-##📊 Sample Queries
+## 📊 Sample Queries
 
 -- Get user expenses with category names
 SELECT name, category_name, amount, description, date
